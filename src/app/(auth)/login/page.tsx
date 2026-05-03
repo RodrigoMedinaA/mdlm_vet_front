@@ -10,16 +10,20 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading, error, user } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login({ email, password });
     if (success) {
-      router.push('/dashboard');
+      setShowWelcome(true);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2500);
     }
   };
 
@@ -58,76 +62,101 @@ export default function LoginPage() {
           </div>
 
           {/* Título */}
-          <h1 className="text-center text-gray-800 text-xl font-bold tracking-wide uppercase">
-            Inicia Sesión
+          <h1 className="text-center text-gray-800 text-xl font-bold tracking-wide uppercase transition-opacity duration-500">
+            {showWelcome ? '¡Bienvenido!' : 'Inicia Sesión'}
           </h1>
 
           {/* Error message */}
-          {error && (
+          {error && !showWelcome && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 text-center">
               {error}
             </div>
           )}
 
-          {/* Formulario */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Campo Gmail */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-600"
-              >
-                Gmail
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ejemplo@gmail.com"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-800 
+          {/* Custom Styles for Animation */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @keyframes customFadeIn {
+              from { opacity: 0; transform: translateY(10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-delay-1 { opacity: 0; animation: customFadeIn 0.8s ease-out 0.2s forwards; }
+            .animate-delay-2 { opacity: 0; animation: customFadeIn 0.8s ease-out 0.8s forwards; }
+            .animate-delay-3 { opacity: 0; animation: customFadeIn 0.8s ease-out 1.4s forwards; }
+          `}} />
+
+          {/* Formulario o Bienvenida */}
+          {showWelcome && user ? (
+            <div className="flex flex-col items-center space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl md:text-4xl font-bold text-[#2ecc71] uppercase tracking-wider animate-delay-1">
+                  {user.name}
+                </h2>
+                <p className="text-gray-500 font-medium text-lg animate-delay-2">
+                  Rol: {user.roles?.join(', ')}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form className={`space-y-5 transition-opacity duration-500 ${showWelcome ? 'opacity-0' : 'opacity-100'}`} onSubmit={handleSubmit}>
+              {/* Campo Gmail */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-600"
+                >
+                  Gmail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ejemplo@gmail.com"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-800 
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 
                            focus:border-[#2ecc71] transition duration-200"
-              />
-            </div>
+                />
+              </div>
 
-            {/* Campo Contraseña */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-600"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Ingresa tu contraseña"
-                required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-800 
+              {/* Campo Contraseña */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-600"
+                >
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Ingresa tu contraseña"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-800 
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 
                            focus:border-[#2ecc71] transition duration-200"
-              />
-            </div>
+                />
+              </div>
 
-            {/* Link ¿Olvidaste tu contraseña? */}
-            <div className="text-right">
-              <Link
-                href="#"
-                className="text-sm text-[#015f33] hover:text-[#2ecc71] font-medium transition-colors duration-200"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
+              {/* Link ¿Olvidaste tu contraseña? */}
+              <div className="text-right">
+                <Link
+                  href="#"
+                  className="text-sm text-[#015f33] hover:text-[#2ecc71] font-medium transition-colors duration-200"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
 
-            {/* Botón reutilizable */}
-            <Button type="submit" fullWidth disabled={isLoading}>
-              {isLoading ? 'Ingresando...' : 'INGRESAR'}
-            </Button>
-          </form>
+              {/* Botón reutilizable */}
+              <Button type="submit" fullWidth disabled={isLoading}>
+                {isLoading ? 'Ingresando...' : 'INGRESAR'}
+              </Button>
+            </form>
+          )}
         </div>
       </div>
 

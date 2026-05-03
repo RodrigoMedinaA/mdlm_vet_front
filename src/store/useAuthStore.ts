@@ -8,6 +8,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   error: string | null;
+  authResponse: any | null;
 
   /** Inicia sesión con email y contraseña */
   login: (credentials: LoginCredentials) => Promise<boolean>;
@@ -24,9 +25,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isLoading: false,
   error: null,
+  authResponse: null,
 
   login: async (credentials: LoginCredentials) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, authResponse: null });
     try {
       const { data } = await api.post<AuthTokenResponse>('/auth/login', credentials);
 
@@ -38,6 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         token: data.access_token,
         isLoading: false,
         error: null,
+        authResponse: data,
       });
 
       return true;

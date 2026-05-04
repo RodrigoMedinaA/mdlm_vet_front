@@ -53,8 +53,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.path}
                 href={item.path}
                 className={`flex items-center space-x-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive
-                    ? 'bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white shadow-lg shadow-[#2ecc71]/30 translate-x-1'
-                    : 'text-gray-500 hover:bg-white/60 hover:text-[#015f33] hover:translate-x-1 font-medium'
+                  ? 'bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white shadow-lg shadow-[#2ecc71]/30 translate-x-1'
+                  : 'text-gray-500 hover:bg-white/60 hover:text-[#015f33] hover:translate-x-1 font-medium'
                   }`}
               >
                 <Icon size={20} className={isActive ? 'text-white' : 'text-[#015f33] opacity-70'} />

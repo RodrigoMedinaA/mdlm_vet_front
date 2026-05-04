@@ -49,7 +49,6 @@ export default function PropietariosList() {
         <table className="w-full text-[13px] text-left text-gray-500">
           <thead className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
             <tr className="border-b border-gray-200/50">
-              <th scope="col" className="px-4 py-3 pb-4">ID</th>
               <th scope="col" className="px-4 py-3 pb-4">Propietario</th>
               <th scope="col" className="px-4 py-3 pb-4">Documento</th>
               <th scope="col" className="px-4 py-3 pb-4">Contacto</th>
@@ -59,7 +58,6 @@ export default function PropietariosList() {
           <tbody>
             {mockOwners.map((owner) => (
               <tr key={owner.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
-                <td className="px-4 py-4.5 font-medium text-gray-500">#{owner.id.toString().padStart(4, '0')}</td>
                 <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
                   <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
                     <Users size={16} />

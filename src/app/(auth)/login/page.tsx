@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/common/Button';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -43,6 +44,17 @@ export default function LoginPage() {
         <div className="absolute bottom-0 right-1/3 w-[350px] h-[350px] rounded-full border border-white/5" />
         <div className="absolute top-20 left-1/4 w-64 h-64 bg-[#2ecc71]/5 rounded-full blur-3xl" />
         <div className="absolute bottom-32 right-1/4 w-80 h-80 bg-[#fec107]/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* Botón Regresa */}
+      <div className="absolute top-6 left-6 md:top-8 md:left-8 z-20">
+        <Link 
+          href="/" 
+          className="flex items-center text-white/80 hover:text-white font-medium text-sm transition-colors"
+        >
+          <ChevronLeft size={18} className="mr-1" />
+          Regresa
+        </Link>
       </div>
 
       {/* Contenido centrado */}

@@ -1,10 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Plus, Search, Dog } from 'lucide-react';
+import { Plus, Search, Dog, FileText } from 'lucide-react';
 import MascotaForm from './MascotaForm';
 
 export default function MascotasList() {
+  const router = useRouter();
   const [view, setView] = useState<'list' | 'create'>('list');
 
   // Mock data for pets table
@@ -49,7 +51,7 @@ export default function MascotasList() {
         <table className="w-full text-[13px] text-left text-gray-500">
           <thead className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
             <tr className="border-b border-gray-200/50">
-              <th scope="col" className="px-4 py-3 pb-4">ID</th>
+              <th scope="col" className="px-4 py-3 pb-4 w-16">Acciones</th>
               <th scope="col" className="px-4 py-3 pb-4">Mascota</th>
               <th scope="col" className="px-4 py-3 pb-4">Especie / Raza</th>
               <th scope="col" className="px-4 py-3 pb-4">Sexo</th>
@@ -60,7 +62,15 @@ export default function MascotasList() {
           <tbody>
             {mockPets.map((pet) => (
               <tr key={pet.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
-                <td className="px-4 py-4.5 font-medium text-gray-500">#{pet.id.toString().padStart(4, '0')}</td>
+                <td className="px-4 py-4.5 text-center">
+                  <button 
+                    title="Ver Historial Clínico"
+                    onClick={() => router.push(`/mascotas/${pet.id}/historial`)}
+                    className="p-1.5 text-gray-400 hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-full transition-all"
+                  >
+                    <FileText size={18} strokeWidth={2} />
+                  </button>
+                </td>
                 <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
                   <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
                     <Dog size={16} />

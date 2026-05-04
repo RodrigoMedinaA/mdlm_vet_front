@@ -1,0 +1,96 @@
+'use client';
+
+import { useState } from 'react';
+import { Search, Dog, HeartHandshake } from 'lucide-react';
+import AdopcionFormModal from './AdopcionFormModal';
+
+export default function AlbergueList() {
+  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+
+  // Mock data for pets in Albergue
+  const mockPets = [
+    { id: 4, nombre: 'Oreo', especie: 'Canino', raza: 'Mestizo', sexo: 'Macho', propietario: 'Albergue Municipal', status: 'Activo' },
+    { id: 5, nombre: 'Michi', especie: 'Felino', raza: 'Mestizo', sexo: 'Hembra', propietario: 'Albergue Municipal', status: 'Activo' },
+    { id: 6, nombre: 'Boby', especie: 'Canino', raza: 'Pug', sexo: 'Macho', propietario: 'Albergue Municipal', status: 'Activo' },
+  ];
+
+  return (
+    <>
+      <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-7 shadow-sm border border-white/60">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Mascotas en Albergue</h2>
+            <p className="text-sm text-gray-500 mt-1">Gestiona las mascotas del Albergue Municipal listas para adopción</p>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar mascota..." 
+                className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px] text-left text-gray-500">
+            <thead className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
+              <tr className="border-b border-gray-200/50">
+                <th scope="col" className="px-4 py-3 pb-4">Acción</th>
+                <th scope="col" className="px-4 py-3 pb-4">ID</th>
+                <th scope="col" className="px-4 py-3 pb-4">Mascota</th>
+                <th scope="col" className="px-4 py-3 pb-4">Especie / Raza</th>
+                <th scope="col" className="px-4 py-3 pb-4">Sexo</th>
+                <th scope="col" className="px-4 py-3 pb-4 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockPets.map((pet) => (
+                <tr key={pet.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
+                  <td className="px-4 py-4.5">
+                    <button 
+                      onClick={() => setSelectedPetId(pet.id)}
+                      className="flex items-center space-x-1.5 bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors shadow-sm"
+                    >
+                      <HeartHandshake size={14} />
+                      <span>¡Adoptado!</span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-4.5 font-medium text-gray-500">#{pet.id.toString().padStart(4, '0')}</td>
+                  <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
+                      <Dog size={16} />
+                    </div>
+                    <span>{pet.nombre}</span>
+                  </td>
+                  <td className="px-4 py-4.5">
+                    <div className="font-medium text-gray-800">{pet.especie}</div>
+                    <div className="text-[11px] text-gray-500">{pet.raza}</div>
+                  </td>
+                  <td className="px-4 py-4.5 font-medium">{pet.sexo}</td>
+                  <td className="px-4 py-4.5 text-center">
+                    <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide ${
+                      pet.status === 'Activo' ? 'bg-[#2ecc71]/20 text-[#015f33]' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {pet.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedPetId && (
+        <AdopcionFormModal 
+          petId={selectedPetId} 
+          onClose={() => setSelectedPetId(null)} 
+        />
+      )}
+    </>
+  );
+}

@@ -40,44 +40,7 @@ export default function DashboardPage() {
         {/* Top Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Card 1: Next Activity */}
-          <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-7 shadow-sm border border-white/60">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-gray-500 font-medium text-sm">Próxima Actividad</h3>
-                <p className="text-[13px] text-gray-400 mt-0.5">11:00 AM, Hoy</p>
-              </div>
-              <button className="text-[13px] text-[#2ecc71] font-semibold hover:underline">Ver calendario</button>
-            </div>
-            
-            <div className="flex items-center justify-between mt-8 bg-white/40 rounded-2xl p-4 border border-white/40">
-              <div className="flex flex-col items-center justify-center space-y-2">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#015f33]">
-                  <Syringe size={28} />
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-gray-800 text-sm">Vacunación</p>
-                  <p className="text-[11px] text-gray-500">Sede Principal</p>
-                </div>
-              </div>
-              
-              <div className="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 text-xs font-bold shadow-sm z-10">
-                VS
-              </div>
-              
-              <div className="flex flex-col items-center justify-center space-y-2">
-                <div className="w-14 h-14 rounded-2xl bg-[#015f33] shadow-sm flex items-center justify-center text-[#2ecc71]">
-                  <Activity size={28} />
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-gray-800 text-sm">Chequeo</p>
-                  <p className="text-[11px] text-gray-500">Móvil Sur</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Weekly Stats */}
+          {/* Card 1: Weekly Stats */}
           <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-7 shadow-sm border border-white/60 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-start mb-6">
@@ -110,6 +73,25 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Canc.</p>
                 <p className="text-xl font-bold text-gray-800 mt-1">18</p>
               </div>
+            </div>
+          </div>
+
+          {/* Card 2: Promotional Card */}
+          <div className="bg-gradient-to-br from-[#015f33] to-[#2ecc71] rounded-[28px] p-8 shadow-xl shadow-[#2ecc71]/20 text-white relative overflow-hidden group cursor-pointer flex flex-col justify-between h-full">
+            {/* Decorative shapes */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-colors duration-500"></div>
+            <div className="absolute right-12 bottom-0 w-20 h-20 bg-black/10 rounded-full blur-xl"></div>
+            
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <div>
+                <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-3">Recordatorio</p>
+                <h3 className="text-[26px] font-extrabold leading-tight mb-6">
+                  Configura la <br/> próxima campaña
+                </h3>
+              </div>
+              <button className="bg-white text-[#015f33] px-6 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-gray-50 transition-colors inline-block hover:scale-105 transform duration-300 self-start">
+                Ir a Campañas
+              </button>
             </div>
           </div>
         </div>
@@ -217,22 +199,7 @@ export default function DashboardPage() {
            </div>
         </div>
 
-        {/* Promotional Card (Setup training style) */}
-        <div className="bg-gradient-to-br from-[#015f33] to-[#2ecc71] rounded-[28px] p-8 shadow-xl shadow-[#2ecc71]/20 text-white relative overflow-hidden group cursor-pointer">
-          {/* Decorative shapes */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-colors duration-500"></div>
-          <div className="absolute right-12 bottom-0 w-20 h-20 bg-black/10 rounded-full blur-xl"></div>
-          
-          <div className="relative z-10">
-            <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-3">Recordatorio</p>
-            <h3 className="text-[26px] font-extrabold leading-tight mb-6">
-              Configura la <br/> próxima campaña
-            </h3>
-            <button className="bg-white text-[#015f33] px-6 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-gray-50 transition-colors inline-block hover:scale-105 transform duration-300">
-              Ir a Campañas
-            </button>
-          </div>
-        </div>
+
 
       </div>
     </div>

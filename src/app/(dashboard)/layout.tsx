@@ -3,9 +3,9 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
-import { 
+import {
   Users, Home, Shield, Calendar, CreditCard, Search, Bell, LayoutDashboard,
-  LogOut
+  LogOut, Dog
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -22,10 +22,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Gestión de mascotas y dueños', path: '/mascotas', icon: Users },
-    { name: 'Gestión de albergue', path: '/albergue', icon: Home },
-    { name: 'Gestión de personal', path: '/personal', icon: Shield },
-    { name: 'Gestión de campañas', path: '/campanas', icon: Calendar },
+    { name: 'Gestión de mascotas y propietarios', path: '/mascotas', icon: Dog },
+    { name: 'Gestión de albergue y adopciones', path: '/albergue', icon: Home },
+    { name: 'Gestión de personal', path: '/personal', icon: Users },
+    { name: 'Gestión de campañas', path: '/campanias', icon: Calendar },
     { name: 'Módulo de caja y ventas', path: '/caja', icon: CreditCard },
   ];
 
@@ -52,11 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center space-x-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${
-                  isActive
+                className={`flex items-center space-x-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive
                     ? 'bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white shadow-lg shadow-[#2ecc71]/30 translate-x-1'
                     : 'text-gray-500 hover:bg-white/60 hover:text-[#015f33] hover:translate-x-1 font-medium'
-                }`}
+                  }`}
               >
                 <Icon size={20} className={isActive ? 'text-white' : 'text-[#015f33] opacity-70'} />
                 <span className="font-semibold text-[14px] tracking-wide">{item.name}</span>
@@ -64,16 +63,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-        
+
         {/* Logout Button */}
         <div className="p-5 border-t border-white/40">
-           <button 
-             onClick={handleLogout}
-             className="w-full flex items-center space-x-4 px-5 py-3.5 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-300 font-medium"
-           >
-             <LogOut size={20} />
-             <span className="font-semibold text-[14px] tracking-wide">Cerrar Sesión</span>
-           </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-4 px-5 py-3.5 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-300 font-medium"
+          >
+            <LogOut size={20} />
+            <span className="font-semibold text-[14px] tracking-wide">Cerrar Sesión</span>
+          </button>
         </div>
       </aside>
 
@@ -120,9 +119,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
-      
+
       {/* Scrollbar styles */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(1, 95, 51, 0.15); border-radius: 10px; }

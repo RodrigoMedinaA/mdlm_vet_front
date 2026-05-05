@@ -1,18 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Dog, HeartHandshake } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Dog, HeartHandshake, Loader2 } from 'lucide-react';
 import AdopcionFormModal from './AdopcionFormModal';
+import { mascotaService } from '@/utils/mascotaService';
+import { Mascota } from '@/interfaces/Mascota';
 
 export default function AlbergueList() {
-  const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
+  const [selectedPet, setSelectedPet] = useState<{ id: string, nombre: string } | null>(null);
+  const [pets, setPets] = useState<Mascota[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for pets in Albergue
-  const mockPets = [
-    { id: 4, nombre: 'Oreo', especie: 'Canino', raza: 'Mestizo', sexo: 'Macho', propietario: 'Albergue Municipal', status: 'Activo' },
-    { id: 5, nombre: 'Michi', especie: 'Felino', raza: 'Mestizo', sexo: 'Hembra', propietario: 'Albergue Municipal', status: 'Activo' },
-    { id: 6, nombre: 'Boby', especie: 'Canino', raza: 'Pug', sexo: 'Macho', propietario: 'Albergue Municipal', status: 'Activo' },
-  ];
+  useEffect(() => {
+    fetchAlberguePets();
+  }, []);
+
+  const fetchAlberguePets = async () => {
+    try {
+      setLoading(true);
+      const data = await mascotaService.getAllAnimals({ albergue: true });
+      setPets(data);
+    } catch (err) {
+      console.error('Error fetching albergue pets:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -47,46 +60,66 @@ export default function AlbergueList() {
               </tr>
             </thead>
             <tbody>
-              {mockPets.map((pet) => (
-                <tr key={pet.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
-                  <td className="px-4 py-4.5">
-                    <button 
-                      onClick={() => setSelectedPetId(pet.id)}
-                      className="flex items-center space-x-1.5 bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors shadow-sm"
-                    >
-                      <HeartHandshake size={14} />
-                      <span>¡Adoptado!</span>
-                    </button>
-                  </td>
-                  <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
-                      <Dog size={16} />
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="animate-spin text-[#2ecc71]" size={24} />
+                      <span className="text-gray-400">Cargando mascotas del albergue...</span>
                     </div>
-                    <span>{pet.nombre}</span>
-                  </td>
-                  <td className="px-4 py-4.5">
-                    <div className="font-medium text-gray-800">{pet.especie}</div>
-                    <div className="text-[11px] text-gray-500">{pet.raza}</div>
-                  </td>
-                  <td className="px-4 py-4.5 font-medium">{pet.sexo}</td>
-                  <td className="px-4 py-4.5 text-center">
-                    <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide ${
-                      pet.status === 'Activo' ? 'bg-[#2ecc71]/20 text-[#015f33]' : 'bg-red-100 text-red-600'
-                    }`}>
-                      {pet.status}
-                    </span>
                   </td>
                 </tr>
-              ))}
+              ) : pets.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    No hay mascotas en el albergue.
+                  </td>
+                </tr>
+              ) : (
+                pets.map((pet) => (
+                  <tr key={pet.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
+                    <td className="px-4 py-4.5">
+                      <button 
+                        onClick={() => setSelectedPet({ id: pet.id, nombre: pet.nombre })}
+                        className="flex items-center space-x-1.5 bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors shadow-sm"
+                      >
+                        <HeartHandshake size={14} />
+                        <span>¡Adoptado!</span>
+                      </button>
+                    </td>
+                    <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
+                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
+                        <Dog size={16} />
+                      </div>
+                      <span>{pet.nombre}</span>
+                    </td>
+                    <td className="px-4 py-4.5">
+                      <div className="font-medium text-gray-800">{pet.especie?.nombre || pet.especie_id || 'N/A'}</div>
+                      <div className="text-[11px] text-gray-500">{pet.raza?.nombre || pet.raza_id || 'N/A'}</div>
+                    </td>
+                    <td className="px-4 py-4.5 font-medium">{pet.sexo}</td>
+                    <td className="px-4 py-4.5 text-center">
+                      <span className="px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide bg-[#2ecc71]/20 text-[#015f33]">
+                        Activo
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {selectedPetId && (
+      {selectedPet && (
         <AdopcionFormModal 
-          petId={selectedPetId} 
-          onClose={() => setSelectedPetId(null)} 
+          petId={selectedPet.id} 
+          petName={selectedPet.nombre}
+          onClose={() => setSelectedPet(null)} 
+          onSuccess={() => {
+            setSelectedPet(null);
+            fetchAlberguePets();
+          }}
         />
       )}
     </>

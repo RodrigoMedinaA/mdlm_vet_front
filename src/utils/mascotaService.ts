@@ -1,0 +1,96 @@
+import api from './api';
+import { Mascota, Propietario } from '@/interfaces/Mascota';
+
+export const mascotaService = {
+  // Animales
+  getAllAnimals: async (filters: { albergue?: boolean } = {}): Promise<Mascota[]> => {
+    const params = new URLSearchParams();
+    if (filters.albergue !== undefined) {
+      params.append('albergue', filters.albergue ? '1' : '0');
+    }
+
+    const response = await api.get(`/animales${params.toString() ? '?' + params.toString() : ''}`);
+    // Laravel usa paginación para mejorar el rendimiento en la carga de datos
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  getAnimalById: async (id: string): Promise<Mascota> => {
+    const response = await api.get(`/animales/${id}`);
+    return response.data.data || response.data;
+  },
+
+  createAnimal: async (data: any): Promise<Mascota> => {
+    const response = await api.post('/animales', data);
+    return response.data.data || response.data;
+  },
+
+  updateAnimal: async (id: string, data: any): Promise<Mascota> => {
+    const response = await api.put(`/animales/${id}`, data);
+    return response.data.data || response.data;
+  },
+
+  deleteAnimal: async (id: string): Promise<void> => {
+    await api.delete(`/animales/${id}`);
+  },
+
+  // Propietarios (needed for select)
+  getAllOwners: async (): Promise<Propietario[]> => {
+    const response = await api.get('/propietarios');
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  getPropietarioById: async (id: string): Promise<Propietario> => {
+    const response = await api.get(`/propietarios/${id}`);
+    return response.data.data || response.data;
+  },
+
+  createPropietario: async (data: any): Promise<Propietario> => {
+    const response = await api.post('/propietarios', data);
+    return response.data.data || response.data;
+  },
+
+  updatePropietario: async (id: string, data: any): Promise<Propietario> => {
+    const response = await api.put(`/propietarios/${id}`, data);
+    return response.data.data || response.data;
+  },
+
+  deletePropietario: async (id: string): Promise<void> => {
+    await api.delete(`/propietarios/${id}`);
+  },
+
+  // Especies
+  getAllSpecies: async (): Promise<any[]> => {
+    const response = await api.get('/especies');
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Razas
+  getAllRazas: async (): Promise<any[]> => {
+    const response = await api.get('/razas');
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Tipo Documentos
+  getTipoDocumentos: async (): Promise<any[]> => {
+    const response = await api.get('/tipo-documentos');
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Historial Clínico
+  getAnimalTimeline: async (animalId: string): Promise<any[]> => {
+    const response = await api.get(`/animales/${animalId}/historial`);
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Alergias
+  getAnimalAlergias: async (animalId: string): Promise<any[]> => {
+    const response = await api.get(`/alergias?animal_id=${animalId}`);
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Condiciones
+  getAnimalCondiciones: async (animalId: string): Promise<any[]> => {
+    const response = await api.get(`/condiciones?animal_id=${animalId}`);
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  }
+};

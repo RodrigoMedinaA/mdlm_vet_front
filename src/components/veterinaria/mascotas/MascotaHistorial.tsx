@@ -1,103 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Dog, FileText, Activity, AlertTriangle, Syringe, Bug, Scale, HeartPulse, History, Plus, Download } from 'lucide-react';
+import { ChevronRight, Dog, FileText, Activity, AlertTriangle, Syringe, Bug, Scale, HeartPulse, History, Plus, Download, Loader2 } from 'lucide-react';
 import TimelineEvent, { ClinicEvent } from './TimelineEvent';
-
-// Mocks Data
-const mockMascotaData = {
-  id: 1,
-  nombre: 'Max',
-  especie: 'Canino',
-  raza: 'Golden Retriever',
-  sexo: 'Macho',
-  color: 'Dorado',
-  esterilizacion: true,
-  propietario: { nombre: 'Juan Perez Gomez', celular: '987654321' },
-  alergias: [
-    { id: 1, alergia_id: 'Alergia Alimentaria', severidad: 'Alta', estado_clinico: 'Activo' },
-    { id: 2, alergia_id: 'Polvo', severidad: 'Baja', estado_clinico: 'Controlado' }
-  ],
-  condiciones: [
-    { id: 1, condicion_id: 'Displasia de cadera', estado_clinico: 'En Observación' }
-  ]
-};
-
-// Historial Clinico Data (Resource API shape)
-const mockTimeline: ClinicEvent[] = [
-  {
-    id: "uuid-1",
-    fecha_hora: "2026-05-04 10:30:00",
-    eventable_type: "App\\Models\\Consulta",
-    detalles: {
-      motivo: "Control de peso y chequeo general",
-      diagnostico: "Paciente sano, en buen estado de carnes. Se recomienda bajar ligeramente la ración de comida.",
-      peso_registrado: 32.5,
-      receta: [
-        {
-          estado_receta: "Emitida",
-          indicaciones_generales: "Suplemento vitamínico",
-          lineas_medicamento: [
-            { medicamento_id: "Omega 3 y 6 Plus", cantidad: 1, instruccion_especifica: "1 cápsula diaria con la comida por 30 días" }
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "uuid-2",
-    fecha_hora: "2026-04-15 09:00:00",
-    eventable_type: "App\\Models\\VacunaAnimal",
-    detalles: {
-      esquema_vacuna: "Sextuple",
-      fecha_aplicacion: "2026-04-15",
-      fecha_proxima: "2027-04-15",
-      nro_dosis: 1,
-      lote: "L-8821B",
-      fabricante: "Zoetis",
-      observaciones: "Ninguna reacción alérgica post-aplicación."
-    }
-  },
-  {
-    id: "uuid-3",
-    fecha_hora: "2026-03-10 11:15:00",
-    eventable_type: "App\\Models\\Desparasitacion",
-    detalles: {
-      medicamento: "Bravecto 20-40kg",
-      dosis: "1 pastilla",
-      via: "Oral",
-      observaciones: "Tomado con comida húmeda sin problemas",
-      fecha_aplicacion: "2026-03-10",
-      fecha_aplicacion_sgte: "2026-06-10"
-    }
-  },
-  {
-    id: "uuid-4",
-    fecha_hora: "2026-01-20 16:45:00",
-    eventable_type: "App\\Models\\Examen",
-    detalles: {
-      nombre: "Radiografía de Cadera",
-      descripcion: "Descarte de progresión de displasia",
-      estado: "Completado",
-      fecha_solicitud: "2026-01-20",
-      fecha_resultado: "2026-01-21",
-      resultado: {
-        hallazgos: "Ligera subluxación coxofemoral bilateral",
-        valores: "Grado B (Leve)",
-        interpretacion: "Controlable con dieta y suplementos articulares",
-        observaciones: ""
-      }
-    }
-  }
-];
+import { mascotaService } from '@/utils/mascotaService';
+import { Mascota } from '@/interfaces/Mascota';
 
 export default function MascotaHistorial({ id }: { id: string }) {
-  // En la implementación real, aquí haríamos fetch del animal y su historial:
-  // /api/animales/${id}  y /api/animales/${id}/historial
+  const [mascota, setMascota] = useState<Mascota | null>(null);
+  const [timeline, setTimeline] = useState<ClinicEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHistorial();
+  }, [id]);
+
+  const fetchHistorial = async () => {
+    try {
+      setLoading(true);
+      const [animalData, timelineData] = await Promise.all([
+        mascotaService.getAnimalById(id),
+        mascotaService.getAnimalTimeline(id)
+      ]);
+      setMascota(animalData);
+      setTimeline(timelineData);
+    } catch (err) {
+      console.error('Error fetching historial:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="animate-spin text-[#2ecc71]" size={40} />
+        <p className="text-gray-500 font-medium text-lg">Cargando historial clínico...</p>
+      </div>
+    );
+  }
+
+  if (!mascota) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-gray-500 text-lg">No se encontró la información de la mascota.</p>
+        <Link href="/mascotas" className="text-[#2ecc71] hover:underline mt-4 inline-block">Volver al directorio</Link>
+      </div>
+    );
+  }
 
   // Extraer el peso más reciente de las consultas
-  const consultas = mockTimeline.filter(e => e.eventable_type === 'App\\Models\\Consulta');
+  const consultas = timeline.filter(e => e.tipo_evento === 'Consulta Médica');
   const ultimoPeso = consultas.length > 0 ? consultas[0].detalles.peso_registrado : null;
 
   return (
@@ -130,28 +84,31 @@ export default function MascotaHistorial({ id }: { id: string }) {
           {/* Tarjeta Mascota */}
           <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-8 shadow-sm border border-white/60">
             <div className="flex flex-col items-center text-center">
-              <h2 className="text-2xl font-bold text-gray-800">{mockMascotaData.nombre}</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{mascota.nombre}</h2>
             </div>
 
             <div className="mt-8 space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-[13px] font-semibold">Propietario</span>
                 <span className="text-gray-800 font-medium text-sm text-right">
-                  {mockMascotaData.propietario.nombre}<br />
-                  <span className="text-gray-400 text-xs">{mockMascotaData.propietario.celular}</span>
+                  {mascota.propietario?.nombre} {mascota.propietario?.paterno}<br />
+                  <span className="text-gray-400 text-xs">{mascota.propietario?.celular}</span>
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-500 text-[13px] font-semibold">Especie/Raza</span>
-                <span className="text-gray-800 font-medium text-sm">{mockMascotaData.especie} - {mockMascotaData.raza}</span>
+                <span className="text-gray-500 text-[13px] font-semibold">Especie / Raza</span>
+                <span className="text-gray-800 font-medium text-sm text-right">
+                  {mascota.especie?.nombre || 'N/A'}<br />
+                  <span className="text-gray-400 text-xs">{mascota.raza?.nombre || 'N/A'}</span>
+                </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-[13px] font-semibold">Sexo</span>
-                <span className="text-gray-800 font-medium text-sm">{mockMascotaData.sexo}</span>
+                <span className="text-gray-800 font-medium text-sm">{mascota.sexo}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-[13px] font-semibold">Esterilizado</span>
-                <span className="text-gray-800 font-medium text-sm">{mockMascotaData.esterilizacion ? 'Sí' : 'No'}</span>
+                <span className="text-gray-800 font-medium text-sm">{mascota.esterilizacion ? 'Sí' : 'No'}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-500 text-[13px] font-semibold flex items-center gap-1.5"><Scale size={14} /> Peso Actual</span>
@@ -170,14 +127,14 @@ export default function MascotaHistorial({ id }: { id: string }) {
               <h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <AlertTriangle size={16} className="text-red-500" /> Alergias
               </h3>
-              {mockMascotaData.alergias.length > 0 ? (
+              {mascota.alergias && mascota.alergias.length > 0 ? (
                 <div className="space-y-2">
-                  {mockMascotaData.alergias.map(alergia => (
-                    <div key={alergia.id} className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
-                      <span className="font-bold text-red-900">{alergia.alergia_id}</span>
+                  {mascota.alergias.map((a: any) => (
+                    <div key={a.id} className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
+                      <span className="font-bold text-red-900">{a.alergia?.nombre || 'Alergia'}</span>
                       <div className="flex gap-2">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-100 text-red-700">Sev: {alergia.severidad}</span>
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{alergia.estado_clinico}</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-100 text-red-700">Sev: {a.severidad}</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{a.estado_clinico}</span>
                       </div>
                     </div>
                   ))}
@@ -194,13 +151,13 @@ export default function MascotaHistorial({ id }: { id: string }) {
               <h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2 mb-3">
                 <HeartPulse size={16} className="text-orange-500" /> Condiciones
               </h3>
-              {mockMascotaData.condiciones.length > 0 ? (
+              {mascota.condiciones && mascota.condiciones.length > 0 ? (
                 <div className="space-y-2">
-                  {mockMascotaData.condiciones.map(cond => (
-                    <div key={cond.id} className="bg-orange-50/50 border border-orange-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
-                      <span className="font-bold text-orange-900">{cond.condicion_id}</span>
+                  {mascota.condiciones.map((c: any) => (
+                    <div key={c.id} className="bg-orange-50/50 border border-orange-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
+                      <span className="font-bold text-orange-900">{c.condicion?.nombre || 'Condición'}</span>
                       <div className="flex gap-2">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{cond.estado_clinico}</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{c.estado_clinico}</span>
                       </div>
                     </div>
                   ))}
@@ -225,13 +182,13 @@ export default function MascotaHistorial({ id }: { id: string }) {
             </div>
           </div>
 
-          {mockTimeline.length === 0 ? (
+          {timeline.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <p>Esta mascota aún no tiene eventos registrados en su historial clínico.</p>
             </div>
           ) : (
             <div className="relative">
-              {mockTimeline.map((event) => (
+              {timeline.map((event) => (
                 <TimelineEvent key={event.id} event={event} />
               ))}
             </div>

@@ -1,17 +1,75 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Plus, Loader2 } from 'lucide-react';
 import PropietarioModal from '../mascotas/PropietarioModal';
+import { mascotaService } from '@/utils/mascotaService';
+import { Propietario } from '@/interfaces/Mascota';
+import { adopcionService } from '@/utils/adopcionService';
 
 interface AdopcionFormModalProps {
-  petId: number;
+  petId: string;
+  petName: string;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
-export default function AdopcionFormModal({ petId, onClose }: AdopcionFormModalProps) {
+export default function AdopcionFormModal({ petId, petName, onClose, onSuccess }: AdopcionFormModalProps) {
   const [isCampañaHabilitada, setIsCampañaHabilitada] = useState(false);
   const [isPropietarioModalOpen, setIsPropietarioModalOpen] = useState(false);
+  const [owners, setOwners] = useState<Propietario[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Form State
+  const [nuevoPropietarioId, setNuevoPropietarioId] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [campaniaId, setCampaniaId] = useState('');
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      setLoadingData(true);
+      const [ownersData, campaignsData] = await Promise.all([
+        mascotaService.getAllOwners(),
+        adopcionService.getAllCampaigns()
+      ]);
+      setOwners(ownersData);
+      setCampaigns(campaignsData);
+    } catch (err) {
+      console.error('Error fetching initial data for adoption:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleConfirmAdopcion = async () => {
+    if (!nuevoPropietarioId) {
+      alert('Por favor seleccione un nuevo propietario.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adopcionService.registrarAdopcion(petId, {
+        animal_id: petId,
+        propietario_nuevo_id: nuevoPropietarioId,
+        observaciones,
+        campania_id: isCampañaHabilitada ? campaniaId : undefined
+      });
+      alert('¡Adopción registrada exitosamente!');
+      onSuccess();
+    } catch (err: any) {
+      console.error('Error registering adoption:', err);
+      alert(err.response?.data?.message || 'Error al registrar la adopción');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -38,7 +96,7 @@ export default function AdopcionFormModal({ petId, onClose }: AdopcionFormModalP
         {/* Body (Scrollable) */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <div className="bg-pink-50 border border-pink-100 rounded-xl p-4 mb-6">
-            <p className="text-sm text-pink-800 font-medium">Estás registrando la adopción de la mascota ID: <strong>#{petId.toString().padStart(4, '0')}</strong></p>
+            <p className="text-sm text-pink-800 font-medium italic">Estás registrando la adopción de: <span className="font-extrabold uppercase not-italic ml-1">{petName}</span></p>
           </div>
 
           <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden">
@@ -54,10 +112,18 @@ export default function AdopcionFormModal({ petId, onClose }: AdopcionFormModalP
                   Nuevo Propietario <span className="text-pink-500">*</span>
                 </label>
                 <div className="flex">
-                  <select className="flex-1 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600">
-                    <option value="">Seleccione una opción</option>
-                    <option value="1">Juan Perez (DNI: 12345678)</option>
-                    <option value="2">Ana Gomez (DNI: 87654321)</option>
+                  <select 
+                    className="flex-1 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
+                    value={nuevoPropietarioId}
+                    onChange={(e) => setNuevoPropietarioId(e.target.value)}
+                    disabled={loadingData}
+                  >
+                    <option value="">{loadingData ? 'Cargando propietarios...' : 'Seleccione una opción'}</option>
+                    {owners.map(owner => (
+                      <option key={owner.id} value={owner.id}>
+                        {owner.nombre} {owner.paterno} (DNI: {owner.nro_doc})
+                      </option>
+                    ))}
                   </select>
                   <button 
                     type="button"
@@ -99,10 +165,15 @@ export default function AdopcionFormModal({ petId, onClose }: AdopcionFormModalP
                     <label className="block text-[13px] font-bold text-gray-700 mb-2">
                       Campaña de Adopción
                     </label>
-                    <select className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600">
+                    <select 
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
+                      value={campaniaId}
+                      onChange={(e) => setCampaniaId(e.target.value)}
+                    >
                       <option value="">Seleccione una campaña en curso</option>
-                      <option value="c1">Campaña de Adopción Navideña 2026</option>
-                      <option value="c2">Feria de Mascotas - Primavera</option>
+                      {campaigns.map(camp => (
+                        <option key={camp.id} value={camp.id}>{camp.nombre}</option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -121,9 +192,11 @@ export default function AdopcionFormModal({ petId, onClose }: AdopcionFormModalP
             Cancelar
           </button>
           <button 
-            className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all duration-300 text-sm flex items-center space-x-2"
+            onClick={handleConfirmAdopcion}
+            disabled={loading || loadingData}
+            className="bg-pink-500 hover:bg-pink-600 disabled:bg-pink-300 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all duration-300 text-sm flex items-center space-x-2"
           >
-            <span>Confirmar Adopción</span>
+            {loading ? <Loader2 className="animate-spin" size={18} /> : <span>Confirmar Adopción</span>}
           </button>
         </div>
       </div>

@@ -1,22 +1,99 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { mascotaService } from '@/utils/mascotaService';
 
 interface PropietarioFormProps {
   onCancel: () => void;
+  editId?: string;
 }
 
-export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
+export default function PropietarioForm({ onCancel, editId }: PropietarioFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(!!editId);
+  const [tipoDocumentos, setTipoDocumentos] = useState<any[]>([]);
+
+  const [formData, setFormData] = useState({
+    tipo_documento_id: '',
+    nro_doc: '',
+    nombre: '',
+    paterno: '',
+    materno: '',
+    email: '',
+    celular: '',
+    nro_emergencia: ''
+  });
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [editId]);
+
+  const fetchInitialData = async () => {
+    try {
+      setFetchingData(true);
+      const docs = await mascotaService.getTipoDocumentos();
+      setTipoDocumentos(docs);
+
+      if (editId) {
+        const owner = await mascotaService.getPropietarioById(editId);
+        setFormData({
+          tipo_documento_id: owner.tipo_documento_id || '',
+          nro_doc: owner.nro_doc?.toString() || '',
+          nombre: owner.nombre || '',
+          paterno: owner.paterno || '',
+          materno: owner.materno || '',
+          email: owner.email || '',
+          celular: owner.celular?.toString() || '',
+          nro_emergencia: owner.nro_emergencia?.toString() || ''
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+    } finally {
+      setFetchingData(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (editId) {
+        await mascotaService.updatePropietario(editId, formData);
+      } else {
+        await mascotaService.createPropietario(formData);
+      }
+      onCancel();
+    } catch (err) {
+      console.error('Error saving owner:', err);
+      alert('Error al guardar el propietario. Por favor, verifica los datos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (fetchingData) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="animate-spin text-[#2ecc71]" size={40} />
+        <p className="text-gray-500 font-medium text-lg">Cargando información del propietario...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header Breadcrumb */}
       <div>
         <div className="flex items-center text-sm text-gray-500 mb-2">
           <span className="hover:text-gray-800 cursor-pointer" onClick={onCancel}>Propietarios</span>
           <ChevronRight size={16} className="mx-2" />
-          <span className="text-gray-800 font-medium">Crear</span>
+          <span className="text-gray-800 font-medium">{editId ? 'Editar' : 'Crear'}</span>
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Crear Propietario</h2>
+        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          {editId ? 'Editar Propietario' : 'Crear Propietario'}
+        </h2>
       </div>
 
       {/* Form Container */}
@@ -32,11 +109,16 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               <label className="block text-[13px] font-bold text-gray-700 mb-2">
                 Tipo documento <span className="text-pink-500">*</span>
               </label>
-              <select className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600">
+              <select 
+                required
+                value={formData.tipo_documento_id}
+                onChange={(e) => setFormData({...formData, tipo_documento_id: e.target.value})}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
+              >
                 <option value="">Seleccione una opción</option>
-                <option value="DNI">DNI</option>
-                <option value="CE">Carnet de Extranjería</option>
-                <option value="Pasaporte">Pasaporte</option>
+                {tipoDocumentos.map(td => (
+                  <option key={td.id} value={td.id}>{td.nombre}</option>
+                ))}
               </select>
             </div>
 
@@ -46,6 +128,9 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="number" 
+                required
+                value={formData.nro_doc}
+                onChange={(e) => setFormData({...formData, nro_doc: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -56,6 +141,9 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="text" 
+                required
+                value={formData.nombre}
+                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -66,6 +154,9 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="text" 
+                required
+                value={formData.paterno}
+                onChange={(e) => setFormData({...formData, paterno: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -76,6 +167,8 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="text" 
+                value={formData.materno}
+                onChange={(e) => setFormData({...formData, materno: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -86,6 +179,9 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="email" 
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -103,6 +199,8 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="number" 
+                value={formData.celular}
+                onChange={(e) => setFormData({...formData, celular: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -113,6 +211,8 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
               </label>
               <input 
                 type="number" 
+                value={formData.nro_emergencia}
+                onChange={(e) => setFormData({...formData, nro_emergencia: e.target.value})}
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
@@ -120,10 +220,16 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          <button className="bg-[#2ecc71] hover:bg-[#27ae60] text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
-            Crear Propietario
+          <button 
+            type="submit"
+            disabled={loading}
+            className="bg-[#2ecc71] hover:bg-[#27ae60] text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {loading && <Loader2 className="animate-spin" size={18} />}
+            {editId ? 'Guardar Cambios' : 'Crear Propietario'}
           </button>
           <button 
+            type="button"
             onClick={onCancel}
             className="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
           >
@@ -131,6 +237,6 @@ export default function PropietarioForm({ onCancel }: PropietarioFormProps) {
           </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

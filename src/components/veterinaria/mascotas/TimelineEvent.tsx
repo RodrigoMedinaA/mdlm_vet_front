@@ -3,7 +3,8 @@ import { Calendar, Stethoscope, Syringe, Bug, FileSearch, Pill, CheckCircle2 } f
 export interface ClinicEvent {
   id: string;
   fecha_hora: string;
-  eventable_type: string;
+  tipo_evento: string;
+  eventable_type: string; // Including it just in case, but using tipo_evento primarily
   detalles: any;
 }
 
@@ -12,10 +13,10 @@ interface TimelineEventProps {
 }
 
 export default function TimelineEvent({ event }: TimelineEventProps) {
-  const isConsulta = event.eventable_type === 'App\\Models\\Consulta';
-  const isVacuna = event.eventable_type === 'App\\Models\\VacunaAnimal';
-  const isDesparasitacion = event.eventable_type === 'App\\Models\\Desparasitacion';
-  const isExamen = event.eventable_type === 'App\\Models\\Examen';
+  const isConsulta = event.tipo_evento === 'Consulta Médica';
+  const isVacuna = event.tipo_evento === 'Vacunación';
+  const isDesparasitacion = event.tipo_evento === 'Desparasitación';
+  const isExamen = event.tipo_evento === 'Examen Médico';
 
   const date = new Date(event.fecha_hora);
   const formattedDate = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -53,28 +54,25 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
 
       {/* Content Card */}
       <div className={`bg-white rounded-2xl p-5 sm:p-6 border shadow-sm transition-shadow hover:shadow-md
-        ${isConsulta ? 'border-blue-100' : 
-          isVacuna ? 'border-emerald-100' : 
-          isDesparasitacion ? 'border-purple-100' : 
-          'border-orange-100'}`}
+        ${isConsulta ? 'border-blue-100' :
+          isVacuna ? 'border-emerald-100' :
+            isDesparasitacion ? 'border-purple-100' :
+              'border-orange-100'}`}
       >
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <h4 className="text-base font-bold text-gray-800 flex items-center gap-2">
-            {isConsulta && 'Consulta Médica'}
-            {isVacuna && 'Vacunación'}
-            {isDesparasitacion && 'Desparasitación'}
-            {isExamen && 'Examen Clínico'}
-            
+            {event.tipo_evento}
+
             {isExamen && event.detalles.estado === 'Completado' && (
-               <CheckCircle2 size={16} className="text-emerald-500" />
+              <CheckCircle2 size={16} className="text-emerald-500" />
             )}
           </h4>
         </div>
 
         {/* Dynamic Body */}
         <div className="text-[13px] text-gray-600 space-y-4">
-          
+
           {/* CONSULTA */}
           {isConsulta && (
             <>
@@ -89,7 +87,7 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
               {event.detalles.receta && event.detalles.receta.length > 0 && (
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <strong className="text-gray-800 flex items-center gap-1.5 mb-2">
-                    <Pill size={14} className="text-blue-500"/> Receta Médica
+                    <Pill size={14} className="text-blue-500" /> Receta Médica
                   </strong>
                   <ul className="space-y-2">
                     {event.detalles.receta.map((receta: any, i: number) => (
@@ -99,7 +97,9 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
                           <div key={j} className="flex items-start gap-2 mt-1.5 ml-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-blue-300 mt-1.5 shrink-0"></div>
                             <div>
-                              <span className="font-semibold text-gray-800">{linea.medicamento_id}</span> - {linea.cantidad}
+                              <span className="font-semibold text-gray-800">
+                                {linea.medicamento_nombre || linea.medicamento?.nombre || linea.medicamento_id}
+                              </span> - {linea.cantidad}
                               <p className="text-gray-500 italic">{linea.instruccion_especifica}</p>
                             </div>
                           </div>
@@ -117,7 +117,9 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <strong className="text-gray-500 block text-[11px] uppercase tracking-wider mb-0.5">Esquema / Vacuna</strong>
-                <span className="font-medium text-gray-800">{event.detalles.esquema_vacuna}</span>
+                <span className="font-medium text-gray-800">
+                  {event.detalles.esquema_vacuna?.nombre || event.detalles.esquema_vacuna || 'N/A'}
+                </span>
               </div>
               <div>
                 <strong className="text-gray-500 block text-[11px] uppercase tracking-wider mb-0.5">Nro Dosis</strong>
@@ -125,7 +127,9 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
               </div>
               <div>
                 <strong className="text-gray-500 block text-[11px] uppercase tracking-wider mb-0.5">Fabricante / Lote</strong>
-                <span className="font-medium text-gray-800">{event.detalles.fabricante} (Lote: {event.detalles.lote})</span>
+                <span className="font-medium text-gray-800">
+                  {event.detalles.medicamento?.nombre || 'N/A'} (Lote: {event.detalles.lote})
+                </span>
               </div>
               {event.detalles.fecha_proxima && (
                 <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
@@ -149,7 +153,9 @@ export default function TimelineEvent({ event }: TimelineEventProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <strong className="text-gray-500 block text-[11px] uppercase tracking-wider mb-0.5">Medicamento</strong>
-                <span className="font-medium text-gray-800">{event.detalles.medicamento}</span>
+                <span className="font-medium text-gray-800">
+                  {event.detalles.medicamento?.nombre || event.detalles.medicamento || 'N/A'}
+                </span>
               </div>
               <div>
                 <strong className="text-gray-500 block text-[11px] uppercase tracking-wider mb-0.5">Dosis / Vía</strong>

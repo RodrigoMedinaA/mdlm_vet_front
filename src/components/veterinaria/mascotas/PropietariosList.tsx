@@ -1,21 +1,78 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Users, Trash2, Loader2, Mail, Phone } from 'lucide-react';
 import PropietarioForm from './PropietarioForm';
+import { mascotaService } from '@/utils/mascotaService';
+import { Propietario } from '@/interfaces/Mascota';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 
 export default function PropietariosList() {
-  const [view, setView] = useState<'list' | 'create'>('list');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  
+  const [owners, setOwners] = useState<Propietario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for owners table
-  const mockOwners = [
-    { id: 1, documento: '12345678', nombre: 'Juan Perez', email: 'juan@example.com', celular: '987654321', status: 'Activo' },
-    { id: 2, documento: '87654321', nombre: 'Ana Gomez', email: 'ana@example.com', celular: '912345678', status: 'Activo' },
-    { id: 3, documento: '45678912', nombre: 'Carlos Diaz', email: 'carlos@example.com', celular: '998877665', status: 'Inactivo' },
-  ];
+  const editId = searchParams.get('owner_edit');
+  const isCreating = searchParams.get('new_owner') === 'true';
 
-  if (view === 'create') {
-    return <PropietarioForm onCancel={() => setView('list')} />;
+  useEffect(() => {
+    fetchOwners();
+  }, []);
+
+  const fetchOwners = async () => {
+    try {
+      setLoading(true);
+      const data = await mascotaService.getAllOwners();
+      setOwners(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching owners:', err);
+      setError('No se pudieron cargar los propietarios.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm('¿Estás seguro de que deseas eliminar este propietario?')) {
+      try {
+        await mascotaService.deletePropietario(id);
+        setOwners(owners.filter(o => o.id !== id));
+      } catch (err) {
+        alert('Error al eliminar el propietario');
+      }
+    }
+  };
+
+  const handleRowClick = (id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('owner_edit', id);
+    params.delete('new_owner');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleCreateClick = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('new_owner', 'true');
+    params.delete('owner_edit');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleCancel = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('owner_edit');
+    params.delete('new_owner');
+    router.push(`${pathname}?${params.toString()}`);
+    fetchOwners();
+  };
+
+  if (isCreating || editId) {
+    return <PropietarioForm onCancel={handleCancel} editId={editId || undefined} />;
   }
 
   return (
@@ -36,7 +93,7 @@ export default function PropietariosList() {
             />
           </div>
           <button 
-            onClick={() => setView('create')}
+            onClick={handleCreateClick}
             className="flex items-center space-x-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
           >
             <Plus size={18} />
@@ -49,6 +106,7 @@ export default function PropietariosList() {
         <table className="w-full text-[13px] text-left text-gray-500">
           <thead className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
             <tr className="border-b border-gray-200/50">
+              <th scope="col" className="px-4 py-3 pb-4 w-16 text-center">Acciones</th>
               <th scope="col" className="px-4 py-3 pb-4">Propietario</th>
               <th scope="col" className="px-4 py-3 pb-4">Documento</th>
               <th scope="col" className="px-4 py-3 pb-4">Contacto</th>
@@ -56,28 +114,64 @@ export default function PropietariosList() {
             </tr>
           </thead>
           <tbody>
-            {mockOwners.map((owner) => (
-              <tr key={owner.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
-                <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
-                    <Users size={16} />
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="animate-spin text-[#2ecc71]" size={24} />
+                    <span className="text-gray-400">Cargando propietarios...</span>
                   </div>
-                  <span>{owner.nombre}</span>
-                </td>
-                <td className="px-4 py-4.5 font-medium text-gray-800">{owner.documento}</td>
-                <td className="px-4 py-4.5">
-                  <div className="font-medium text-gray-800">{owner.email}</div>
-                  <div className="text-[11px] text-gray-500">{owner.celular}</div>
-                </td>
-                <td className="px-4 py-4.5 text-center">
-                  <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide ${
-                    owner.status === 'Activo' ? 'bg-[#2ecc71]/20 text-[#015f33]' : 'bg-red-100 text-red-600'
-                  }`}>
-                    {owner.status}
-                  </span>
                 </td>
               </tr>
-            ))}
+            ) : owners.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  {error || 'No hay propietarios registrados.'}
+                </td>
+              </tr>
+            ) : (
+              owners.map((owner) => (
+                <tr 
+                  key={owner.id} 
+                  onClick={() => handleRowClick(owner.id)}
+                  className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors cursor-pointer"
+                >
+                  <td className="px-4 py-4.5 text-center">
+                    <button 
+                      title="Eliminar registro"
+                      onClick={(e) => handleDelete(e, owner.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                    >
+                      <Trash2 size={18} strokeWidth={2} />
+                    </button>
+                  </td>
+                  <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">
+                      <Users size={16} />
+                    </div>
+                    <span>{owner.nombre} {owner.paterno}</span>
+                  </td>
+                  <td className="px-4 py-4.5 font-medium text-gray-800">{owner.nro_doc}</td>
+                  <td className="px-4 py-4.5">
+                    <div className="flex items-center gap-1.5 font-medium text-gray-800">
+                      <Mail size={14} className="text-gray-400" />
+                      {owner.email}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
+                      <Phone size={14} className="text-gray-400" />
+                      {owner.celular || 'N/A'}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4.5 text-center">
+                    <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide ${
+                      owner.celular ? 'bg-[#2ecc71]/20 text-[#015f33]' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {owner.celular ? 'Verificado' : 'Pendiente'}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

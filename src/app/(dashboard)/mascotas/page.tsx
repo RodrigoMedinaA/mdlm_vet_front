@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Users, Dog } from 'lucide-react';
 import TabsHeader from '@/components/ui/TabsHeader';
 import MascotasList from '@/components/veterinaria/mascotas/MascotasList';
@@ -20,7 +20,9 @@ export default function MascotasPage() {
 
       {/* Content Area */}
       <div className="relative">
-        {activeTab === 'mascotas' ? <MascotasList /> : <PropietariosList />}
+        <Suspense fallback={<div>Cargando...</div>}>
+          {activeTab === 'mascotas' ? <MascotasList /> : <PropietariosList />}
+        </Suspense>
       </div>
     </div>
   );

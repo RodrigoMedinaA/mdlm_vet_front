@@ -1,52 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Eye, X } from 'lucide-react';
-
-const mockCampaigns = [
-  { id: '1', name: 'Campaña de Verano 2026' },
-  { id: '2', name: 'Adopta un Amigo - Abril 2026' },
-  { id: '3', name: 'Familias Felices - Diciembre 2025' },
-];
-
-const mockAdoptions = [
-  {
-    id: '1',
-    mascota: 'Firulais',
-    especieRaza: 'Perro - Mestizo',
-    nuevoPropietario: 'Juan Perez',
-    fechaAdopcion: '2026-05-01',
-    observaciones: 'Se entregó desparasitado y con su primera vacuna. La familia se comprometió a enviarnos fotos mensuales del progreso.',
-    campaignId: '1',
-  },
-  {
-    id: '2',
-    mascota: 'Michi',
-    especieRaza: 'Gato - Siamés',
-    nuevoPropietario: 'Maria Gomez',
-    fechaAdopcion: '2026-04-15',
-    observaciones: 'Requiere dieta especial por problemas renales. Se le entregó un saco de comida medicada inicial.',
-    campaignId: '2',
-  },
-  {
-    id: '3',
-    mascota: 'Max',
-    especieRaza: 'Perro - Golden Retriever',
-    nuevoPropietario: 'Carlos Sánchez',
-    fechaAdopcion: '2025-12-20',
-    observaciones: 'Perro muy activo, necesita espacio para correr. Fue adoptado por una familia que vive en el campo.',
-    campaignId: '3',
-  },
-  {
-    id: '4',
-    mascota: 'Luna',
-    especieRaza: 'Gato - Angora',
-    nuevoPropietario: 'Ana Torres',
-    fechaAdopcion: '2026-05-03',
-    observaciones: 'Se le hizo seguimiento y se adaptó muy rápido a su nuevo hogar.',
-    campaignId: '1',
-  }
-];
+import { useEffect, useState } from 'react';
+import { Eye, X, Loader2, Calendar, Dog } from 'lucide-react';
+import { adopcionService } from '@/utils/adopcionService';
 
 export default function AdopcionesList() {
   const [filterType, setFilterType] = useState('campaign'); // 'campaign' | 'dates'
@@ -55,18 +11,47 @@ export default function AdopcionesList() {
   const [endDate, setEndDate] = useState('');
   const [selectedObservation, setSelectedObservation] = useState<string | null>(null);
 
-  // Filter adoptions based on current selection
-  const filteredAdoptions = mockAdoptions.filter((adoption) => {
-    if (filterType === 'campaign') {
-      return selectedCampaign === '' || adoption.campaignId === selectedCampaign;
-    } else {
-      if (!startDate || !endDate) return true;
-      const adoptionDate = new Date(adoption.fechaAdopcion);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      return adoptionDate >= start && adoptionDate <= end;
+  const [adoptions, setAdoptions] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    fetchAdoptions();
+  }, [filterType, selectedCampaign, startDate, endDate]);
+
+  const fetchInitialData = async () => {
+    try {
+      const camps = await adopcionService.getAllCampaigns();
+      setCampaigns(camps);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
     }
-  });
+  };
+
+  const fetchAdoptions = async () => {
+    try {
+      setLoading(true);
+      const filters: any = {};
+      if (filterType === 'campaign' && selectedCampaign) {
+        filters.campania_id = selectedCampaign;
+      } else if (filterType === 'dates' && startDate && endDate) {
+        filters.fecha_inicio = startDate;
+        filters.fecha_fin = endDate;
+      }
+      
+      const data = await adopcionService.getAllAdoptions(filters);
+      setAdoptions(data);
+    } catch (err) {
+      console.error('Error fetching adoptions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="bg-white/80 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
@@ -98,8 +83,8 @@ export default function AdopcionesList() {
                   onChange={(e) => setSelectedCampaign(e.target.value)}
                 >
                   <option value="">-- Todas las campañas --</option>
-                  {mockCampaigns.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                  {campaigns.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
                 </select>
               </div>
@@ -142,56 +127,58 @@ export default function AdopcionesList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredAdoptions.map((adoption) => {
-                const [especie, raza] = adoption.especieRaza.split(' - ');
-                return (
-                  <tr key={adoption.id} className="hover:bg-green-50/30 transition-colors group">
-                    <td className="p-4 text-center align-middle">
-                      <button
-                        onClick={() => setSelectedObservation(adoption.observaciones)}
-                        className="p-2 text-gray-400 group-hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-full transition-all"
-                        title="Ver observaciones"
-                      >
-                        <Eye size={20} />
-                      </button>
-                    </td>
-                    <td className="p-4 align-middle">
-                      <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center text-[#11ba82]">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M8 5a3.5 3.5 0 1 0-3.5 3.5"/>
-                            <path d="M16 5a3.5 3.5 0 1 1 3.5 3.5"/>
-                            <circle cx="12" cy="13" r="7"/>
-                            <circle cx="9" cy="11.5" r="1.5" fill="currentColor" stroke="none"/>
-                            <circle cx="15" cy="11.5" r="1.5" fill="currentColor" stroke="none"/>
-                            <path d="M10 14.5c1 1 3 1 4 0"/>
-                          </svg>
-                        </div>
-                        <span className="font-bold text-gray-800 text-[15px]">{adoption.mascota}</span>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="animate-spin text-[#11ba82]" size={28} />
+                      <span className="text-gray-400 font-medium">Cargando registro de adopciones...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : adoptions.map((adoption) => (
+                <tr key={adoption.id} className="hover:bg-green-50/30 transition-colors group">
+                  <td className="p-4 text-center align-middle">
+                    <button
+                      onClick={() => setSelectedObservation(adoption.observaciones)}
+                      className="p-2 text-gray-400 group-hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-full transition-all"
+                      title="Ver observaciones"
+                    >
+                      <Eye size={20} />
+                    </button>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center text-[#11ba82]">
+                        <Dog size={22} />
                       </div>
-                    </td>
-                    <td className="p-4 align-middle">
-                      <div className="flex flex-col justify-center">
-                        <span className="text-[15px] text-gray-700">{especie || adoption.especieRaza}</span>
-                        <span className="text-[13px] text-gray-500 font-medium">{raza || ''}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-gray-600 align-middle font-medium">{adoption.nuevoPropietario}</td>
-                    <td className="p-4 text-gray-600 align-middle">
-                      {new Date(adoption.fechaAdopcion).toLocaleDateString('es-ES', {
+                      <span className="font-bold text-gray-800 text-[15px]">{adoption.animal.nombre}</span>
+                    </div>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <div className="flex flex-col justify-center">
+                      <span className="text-[15px] text-gray-700">{adoption.animal.especie?.nombre || 'N/A'}</span>
+                      <span className="text-[13px] text-gray-500 font-medium">{adoption.animal.raza?.nombre || ''}</span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-gray-600 align-middle font-medium">{adoption.propietario_nuevo.nombre_completo}</td>
+                  <td className="p-4 text-gray-600 align-middle">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={14} className="text-gray-400" />
+                      {new Date(adoption.fecha_adopcion).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
                       })}
-                    </td>
-                  </tr>
-                );
-              })}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {filteredAdoptions.length === 0 && (
+        {!loading && adoptions.length === 0 && (
           <div className="text-center py-16 text-gray-500 bg-gray-50/50">
             <p className="text-lg font-medium text-gray-600 mb-1">No hay registros</p>
             <p className="text-sm">No se encontraron adopciones con los filtros seleccionados.</p>

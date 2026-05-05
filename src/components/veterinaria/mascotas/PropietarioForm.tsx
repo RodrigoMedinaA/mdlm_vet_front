@@ -3,6 +3,7 @@
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { mascotaService } from '@/utils/mascotaService';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 
 interface PropietarioFormProps {
   onCancel: () => void;
@@ -105,22 +106,17 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
           </div>
           
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-2">
-                Tipo documento <span className="text-pink-500">*</span>
-              </label>
-              <select 
-                required
-                value={formData.tipo_documento_id}
-                onChange={(e) => setFormData({...formData, tipo_documento_id: e.target.value})}
-                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
-              >
-                <option value="">Seleccione una opción</option>
-                {tipoDocumentos.map(td => (
-                  <option key={td.id} value={td.id}>{td.nombre}</option>
-                ))}
-              </select>
-            </div>
+            <SearchableSelect 
+              label="Tipo documento"
+              required
+              placeholder="Seleccione un tipo"
+              value={formData.tipo_documento_id}
+              onChange={(val) => setFormData({...formData, tipo_documento_id: val.toString()})}
+              options={tipoDocumentos.map(td => ({
+                id: td.id,
+                label: td.nombre
+              }))}
+            />
 
             <div>
               <label className="block text-[13px] font-bold text-gray-700 mb-2">

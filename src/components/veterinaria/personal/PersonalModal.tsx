@@ -1,4 +1,4 @@
-import { UserPlus, Mail } from 'lucide-react';
+import { UserPlus, Mail, Loader2 } from 'lucide-react';
 
 interface PersonalModalProps {
   isOpen: boolean;
@@ -12,11 +12,13 @@ interface PersonalModalProps {
     nro_doc: string;
     rol_sistema: string;
     email: string;
+    especialidad: string;
     celular?: string;
   };
+  loading?: boolean;
 }
 
-export default function PersonalModal({ isOpen, onClose, onConfirm, formData }: PersonalModalProps) {
+export default function PersonalModal({ isOpen, onClose, onConfirm, formData, loading }: PersonalModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -38,7 +40,7 @@ export default function PersonalModal({ isOpen, onClose, onConfirm, formData }: 
             </div>
             <div className="grid grid-cols-3 gap-2">
               <span className="font-semibold text-gray-500 col-span-1">Documento:</span> 
-              <span className="text-gray-800 font-medium col-span-2">{formData.tipo_doc_id} {formData.nro_doc}</span>
+              <span className="text-gray-800 font-medium col-span-2">{formData.nro_doc}</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <span className="font-semibold text-gray-500 col-span-1">Rol:</span> 
@@ -58,15 +60,18 @@ export default function PersonalModal({ isOpen, onClose, onConfirm, formData }: 
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-6 py-2.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            disabled={loading}
+            className="flex-1 px-6 py-2.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
           >
             Volver y editar
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 px-6 py-2.5 bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm shadow-[#2ecc71]/30 flex items-center justify-center gap-2"
+            disabled={loading}
+            className="flex-1 px-6 py-2.5 bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm shadow-[#2ecc71]/30 flex items-center justify-center gap-2 disabled:opacity-50"
           >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : null}
             Confirmar y enviar
           </button>
         </div>

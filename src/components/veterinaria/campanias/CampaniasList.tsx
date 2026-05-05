@@ -1,19 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Plus, FileText, Check, X, Table, Flag, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, FileText, Check, X, Table, Flag, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-interface Campania {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  lugar: string;
-  fecha_hora_inicio: string;
-  fecha_hora_fin: string;
-  estado: 'programada' | 'planificada' | 'en_curso' | 'finalizada' | 'cancelada';
-  responsable_nombre: string; // We'll map responsable_id to a name in mock
-}
+import { campaniaService, Campania } from '@/utils/campaniaService';
+import { inventarioService, Medicamento } from '@/utils/inventarioService';
+import { useRouter } from 'next/navigation';
 
 const mockCampaniasData: Campania[] = [
   {
@@ -49,36 +41,106 @@ const mockCampaniasData: Campania[] = [
 ];
 
 export default function CampaniasList() {
-  const [campanias, setCampanias] = useState<Campania[]>(mockCampaniasData);
+  const router = useRouter();
+  const [campanias, setCampanias] = useState<Campania[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   const [campaniaToStart, setCampaniaToStart] = useState<Campania | null>(null);
   const [campaniaToCancel, setCampaniaToCancel] = useState<Campania | null>(null);
   const [campaniaToFinish, setCampaniaToFinish] = useState<Campania | null>(null);
+  
+  // Finish Modal State
+  const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
+  const [insumosConsumidos, setInsumosConsumidos] = useState<Array<{ medicamento_id: string, cantidad: number }>>([]);
+  const [isFinishing, setIsFinishing] = useState(false);
+
+  useEffect(() => {
+    fetchCampanias();
+  }, []);
+
+  const fetchCampanias = async () => {
+    try {
+      setLoading(true);
+      const data = await campaniaService.getAll();
+      setCampanias(data);
+    } catch (err) {
+      console.error('Error fetching campanias:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMedicamentos = async () => {
+    try {
+      const data = await inventarioService.getAllMedicamentos();
+      setMedicamentos(data);
+    } catch (err) {
+      console.error('Error fetching medicamentos:', err);
+    }
+  };
 
   const filteredCampanias = campanias.filter(c => 
     c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.lugar.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.lugar || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleStartConfirm = () => {
-    if (campaniaToStart) {
-      setCampanias(prev => prev.map(c => c.id === campaniaToStart.id ? { ...c, estado: 'en_curso' } : c));
+  const handleStartConfirm = async () => {
+    if (!campaniaToStart) return;
+    try {
+      await campaniaService.iniciar(campaniaToStart.id);
       setCampaniaToStart(null);
+      fetchCampanias();
+    } catch (err) {
+      alert('Error al iniciar la campaña');
     }
   };
 
-  const handleCancelConfirm = () => {
-    if (campaniaToCancel) {
-      setCampanias(prev => prev.map(c => c.id === campaniaToCancel.id ? { ...c, estado: 'cancelada' } : c));
+  const handleCancelConfirm = async () => {
+    if (!campaniaToCancel) return;
+    try {
+      await campaniaService.cancelar(campaniaToCancel.id);
       setCampaniaToCancel(null);
+      fetchCampanias();
+    } catch (err) {
+      alert('Error al cancelar la campaña');
     }
   };
 
-  const handleFinishConfirm = () => {
-    if (campaniaToFinish) {
-      setCampanias(prev => prev.map(c => c.id === campaniaToFinish.id ? { ...c, estado: 'finalizada' } : c));
+  const handleFinishConfirm = async () => {
+    if (!campaniaToFinish) return;
+    try {
+      setIsFinishing(true);
+      await campaniaService.finalizar(campaniaToFinish.id, {
+        insumos_consumidos: insumosConsumidos
+      });
       setCampaniaToFinish(null);
+      setInsumosConsumidos([]);
+      fetchCampanias();
+    } catch (err) {
+      alert('Error al finalizar la campaña. Verifique el stock de insumos.');
+    } finally {
+      setIsFinishing(false);
     }
+  };
+
+  useEffect(() => {
+    if (campaniaToFinish) {
+      fetchMedicamentos();
+    }
+  }, [campaniaToFinish]);
+
+  const addInsumo = () => {
+    setInsumosConsumidos([...insumosConsumidos, { medicamento_id: '', cantidad: 1 }]);
+  };
+
+  const updateInsumo = (index: number, field: string, value: any) => {
+    const newInsumos = [...insumosConsumidos];
+    newInsumos[index] = { ...newInsumos[index], [field]: value };
+    setInsumosConsumidos(newInsumos);
+  };
+
+  const removeInsumo = (index: number) => {
+    setInsumosConsumidos(insumosConsumidos.filter((_, i) => i !== index));
   };
 
   const getEstadoLabel = (estado: string) => {
@@ -89,6 +151,12 @@ export default function CampaniasList() {
       case 'finalizada': return 'Finalizada';
       case 'cancelada': return 'Cancelada';
       default: return estado;
+    }
+  };
+
+  const handleRowClick = (campania: Campania) => {
+    if (campania.estado.toLowerCase() === 'planificada' || campania.estado.toLowerCase() === 'programada') {
+      router.push(`/campanias/crear?edit=${campania.id}`);
     }
   };
 
@@ -155,9 +223,26 @@ export default function CampaniasList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredCampanias.map((campania) => (
-                <tr key={campania.id} className="hover:bg-green-50/30 transition-colors group">
-                  <td className="p-4 align-middle">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="p-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 size={32} className="animate-spin text-[#11ba82]" />
+                      <span>Cargando campañas...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredCampanias.map((campania) => (
+                <tr 
+                  key={campania.id} 
+                  onClick={() => handleRowClick(campania)}
+                  className={`hover:bg-green-50/30 transition-colors group ${
+                    (campania.estado.toLowerCase() === 'planificada' || campania.estado.toLowerCase() === 'programada') 
+                      ? 'cursor-pointer' 
+                      : ''
+                  }`}
+                >
+                  <td className="p-4 align-middle" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1">
                       {(campania.estado === 'programada' || campania.estado === 'planificada') && (
                         <>
@@ -218,15 +303,16 @@ export default function CampaniasList() {
                     >
                       <FileText size={20} strokeWidth={1.5} />
                       {/* Tooltip */}
-                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 w-64 p-3 bg-gray-900 text-white text-[12px] leading-relaxed rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl z-50 pointer-events-none text-left">
-                        {campania.descripcion}
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
-                      </div>
+                      <div 
+                        className="absolute left-full top-1/2 -translate-y-1/2 ml-3 w-64 p-3 bg-gray-900 text-white text-[12px] leading-relaxed rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl z-50 pointer-events-none text-left prose prose-invert prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: campania.descripcion }}
+                      />
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all"></div>
                     </div>
                   </td>
-                  <td className="p-4 text-gray-600 align-middle text-[14px]">{formatDate(campania.fecha_hora_inicio)}</td>
-                  <td className="p-4 text-gray-600 align-middle text-[14px]">{formatDate(campania.fecha_hora_fin)}</td>
-                  <td className="p-4 text-gray-600 align-middle text-[14px]">{campania.responsable_nombre}</td>
+                  <td className="p-4 text-gray-600 align-middle text-[14px]">{campania.fecha_hora_inicio ? formatDate(campania.fecha_hora_inicio) : '-'}</td>
+                  <td className="p-4 text-gray-600 align-middle text-[14px]">{campania.fecha_hora_fin ? formatDate(campania.fecha_hora_fin) : '-'}</td>
+                  <td className="p-4 text-gray-600 align-middle text-[14px]">{campania.responsable?.nombre || 'N/A'}</td>
                   <td className="p-4 align-middle text-center">
                     <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-bold min-w-[90px] whitespace-nowrap ${getEstadoBadgeColor(campania.estado)}`}>
                       {getEstadoLabel(campania.estado)}
@@ -316,34 +402,84 @@ export default function CampaniasList() {
         </div>
       )}
 
-      {/* Finish Confirmation Modal */}
+      {/* Finish Confirmation Modal with Supplies */}
       {campaniaToFinish && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+          <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 overflow-y-auto max-h-[90vh]">
             <div className="flex flex-col items-center text-center mb-6">
               <div className="w-16 h-16 bg-[#11ba82]/10 text-[#11ba82] rounded-full flex items-center justify-center mb-4">
                 <Flag size={32} strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Finalizar Campaña</h3>
               <p className="text-gray-600">
-                ¿Deseas marcar la campaña <strong className="text-gray-800">{campaniaToFinish.nombre}</strong> como finalizada?
+                Para finalizar la campaña <strong className="text-gray-800">{campaniaToFinish.nombre}</strong>, registre los insumos consumidos.
               </p>
-              <p className="text-gray-500 text-[13px] mt-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                Se guardarán todas las estadísticas y el estado pasará a "Finalizada".
-              </p>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">Insumos / Medicamentos</span>
+                <button 
+                  onClick={addInsumo}
+                  className="text-[12px] font-bold text-[#11ba82] hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  Agregar insumo
+                </button>
+              </div>
+
+              {insumosConsumidos.length === 0 ? (
+                <div className="py-8 text-center border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 text-sm">
+                  No se han registrado insumos.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {insumosConsumidos.map((insumo, idx) => (
+                    <div key={idx} className="flex gap-3 animate-in slide-in-from-top-2 duration-200">
+                      <select
+                        value={insumo.medicamento_id}
+                        onChange={(e) => updateInsumo(idx, 'medicamento_id', e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#11ba82]/30"
+                      >
+                        <option value="">Seleccione un insumo</option>
+                        {medicamentos.map(m => (
+                          <option key={m.id} value={m.id}>{m.nombre} (Stock: {m.stock})</option>
+                        ))}
+                      </select>
+                      <input 
+                        type="number"
+                        min="1"
+                        placeholder="Cant."
+                        value={insumo.cantidad}
+                        onChange={(e) => updateInsumo(idx, 'cantidad', parseInt(e.target.value))}
+                        className="w-20 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#11ba82]/30"
+                      />
+                      <button 
+                        onClick={() => removeInsumo(idx)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="flex justify-between gap-3">
               <button
+                disabled={isFinishing}
                 onClick={() => setCampaniaToFinish(null)}
-                className="flex-1 px-6 py-2.5 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                className="flex-1 px-6 py-2.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Volver
               </button>
               <button
+                disabled={isFinishing}
                 onClick={handleFinishConfirm}
-                className="flex-1 px-6 py-2.5 bg-[#11ba82] text-white font-medium rounded-xl hover:bg-[#0e9d6d] active:bg-[#0c8a60] transition-colors shadow-sm shadow-[#11ba82]/20"
+                className="flex-1 px-6 py-2.5 bg-[#11ba82] text-white font-bold rounded-xl hover:bg-[#0e9d6d] active:bg-[#0c8a60] transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
+                {isFinishing && <Loader2 size={16} className="animate-spin" />}
                 Finalizar campaña
               </button>
             </div>

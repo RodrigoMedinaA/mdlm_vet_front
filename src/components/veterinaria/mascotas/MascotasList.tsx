@@ -15,6 +15,7 @@ export default function MascotasList() {
   const pathname = usePathname();
   
   const [pets, setPets] = useState<Mascota[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +74,15 @@ export default function MascotasList() {
     fetchPets(); // Refresh list
   };
 
+  const filteredPets = pets.filter(pet => {
+    const search = searchTerm.toLowerCase();
+    return (
+      pet.nombre.toLowerCase().includes(search) ||
+      pet.especie?.nombre?.toLowerCase().includes(search) ||
+      pet.raza?.nombre?.toLowerCase().includes(search)
+    );
+  });
+
   if (isCreating || editId) {
     return <MascotaForm onCancel={handleCancel} editId={editId || undefined} />;
   }
@@ -91,6 +101,8 @@ export default function MascotasList() {
             <input 
               type="text" 
               placeholder="Buscar mascota..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm placeholder:text-gray-400"
             />
           </div>
@@ -126,14 +138,14 @@ export default function MascotasList() {
                   </div>
                 </td>
               </tr>
-            ) : pets.length === 0 ? (
+            ) : filteredPets.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  {error || 'No hay mascotas registradas.'}
+                  No se encontraron mascotas que coincidan con la búsqueda.
                 </td>
               </tr>
             ) : (
-              (pets || []).map((pet) => (
+              filteredPets.map((pet) => (
                 <tr 
                   key={pet.id} 
                   onClick={() => handleRowClick(pet.id)}

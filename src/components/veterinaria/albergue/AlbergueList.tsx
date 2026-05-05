@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Dog, HeartHandshake, Loader2 } from 'lucide-react';
+import { Search, Dog, HeartHandshake, Loader2, FileText } from 'lucide-react';
 import AdopcionFormModal from './AdopcionFormModal';
+import { useRouter } from 'next/navigation';
 import { mascotaService } from '@/utils/mascotaService';
 import { Mascota } from '@/interfaces/Mascota';
 
 export default function AlbergueList() {
+  const router = useRouter();
   const [selectedPet, setSelectedPet] = useState<{ id: string, nombre: string } | null>(null);
   const [pets, setPets] = useState<Mascota[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,10 @@ export default function AlbergueList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRowClick = (id: string) => {
+    router.push(`/mascotas?edit=${id}`);
   };
 
   return (
@@ -77,15 +83,28 @@ export default function AlbergueList() {
                 </tr>
               ) : (
                 pets.map((pet) => (
-                  <tr key={pet.id} className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors">
-                    <td className="px-4 py-4.5">
-                      <button 
-                        onClick={() => setSelectedPet({ id: pet.id, nombre: pet.nombre })}
-                        className="flex items-center space-x-1.5 bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors shadow-sm"
-                      >
-                        <HeartHandshake size={14} />
-                        <span>¡Adoptado!</span>
-                      </button>
+                  <tr 
+                    key={pet.id} 
+                    onClick={() => handleRowClick(pet.id)}
+                    className="border-b border-gray-200/50 last:border-0 hover:bg-white/40 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-4.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setSelectedPet({ id: pet.id, nombre: pet.nombre })}
+                          className="flex items-center space-x-1.5 bg-pink-100 text-pink-600 hover:bg-pink-500 hover:text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors shadow-sm"
+                        >
+                          <HeartHandshake size={14} />
+                          <span>¡Adoptado!</span>
+                        </button>
+                        <button 
+                          title="Ver Historial Clínico"
+                          onClick={() => router.push(`/mascotas/${pet.id}/historial`)}
+                          className="p-1.5 text-gray-400 hover:text-[#015f33] hover:bg-[#015f33]/10 rounded-full transition-all"
+                        >
+                          <FileText size={18} strokeWidth={2} />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-4.5 font-bold text-gray-800 flex items-center space-x-3">
                       <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#015f33] shrink-0">

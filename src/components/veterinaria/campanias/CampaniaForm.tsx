@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronRight, CalendarPlus, CheckCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { ChevronRight, CalendarPlus, CheckCircle } from 'lucide-react';
+import { campaniaService } from '@/utils/campaniaService';
+import { personalService, Personal } from '@/utils/personalService';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -17,24 +20,63 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
   loading: () => <div className="h-40 bg-gray-50 animate-pulse rounded-xl flex items-center justify-center text-gray-400 border border-gray-100">Cargando editor...</div> 
 });
 
-// Mock active personal
-const mockActivePersonal = [
-  { id: '123e4567-e89b-12d3-a456-426614174000', nombre: 'Juan Perez Gomez' },
-  { id: '123e4567-e89b-12d3-a456-426614174001', nombre: 'Ana Maria Torres' },
-  { id: '123e4567-e89b-12d3-a456-426614174002', nombre: 'Luis Ramirez Soto' }
-];
-
 export default function CampaniaForm() {
   const router = useRouter();
+  const [personal, setPersonal] = useState<Personal[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchingPersonal, setFetchingPersonal] = useState(true);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
     lugar: '',
     fecha_hora_inicio: '',
     fecha_hora_fin: '',
-    estado: 'planificada',
+    estado: 'PLANIFICADA',
     responsable_id: ''
   });
+
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const editId = searchParams.get('edit');
+
+  useEffect(() => {
+    fetchPersonal();
+    if (editId) {
+      fetchCampaniaData();
+    }
+  }, [editId]);
+
+  const fetchCampaniaData = async () => {
+    if (!editId) return;
+    try {
+      setLoading(true);
+      const campania = await campaniaService.getById(editId);
+      setFormData({
+        nombre: campania.nombre,
+        descripcion: campania.descripcion || '',
+        lugar: campania.lugar || '',
+        fecha_hora_inicio: campania.fecha_hora_inicio ? campania.fecha_hora_inicio.slice(0, 16) : '',
+        fecha_hora_fin: campania.fecha_hora_fin ? campania.fecha_hora_fin.slice(0, 16) : '',
+        estado: campania.estado.toUpperCase(),
+        responsable_id: campania.responsable_id || campania.responsable?.id || ''
+      });
+    } catch (err) {
+      console.error('Error fetching campaign for edit:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPersonal = async () => {
+    try {
+      setFetchingPersonal(true);
+      const data = await personalService.getAllActive();
+      setPersonal(data);
+    } catch (err) {
+      console.error('Error fetching personal:', err);
+    } finally {
+      setFetchingPersonal(false);
+    }
+  };
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -59,10 +101,35 @@ export default function CampaniaForm() {
     setShowConfirmModal(true);
   };
 
-  const handleConfirmSubmit = () => {
-    console.log('Form data to submit:', formData);
-    // Aquí iría el POST a /api/campanias
-    router.push('/campanias');
+  const handleConfirmSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // Formatear fechas para el backend (Y-m-d H:i:s)
+      const formatToBackendDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        return dateStr.replace('T', ' ') + ':00';
+      };
+
+      const submissionData = {
+        ...formData,
+        fecha_hora_inicio: formatToBackendDate(formData.fecha_hora_inicio),
+        fecha_hora_fin: formatToBackendDate(formData.fecha_hora_fin),
+        estado: formData.estado.toLowerCase()
+      };
+
+      if (editId) {
+        await campaniaService.update(editId, submissionData);
+      } else {
+        await campaniaService.create(submissionData);
+      }
+      router.push('/campanias');
+    } catch (err) {
+      console.error('Error creating campaign:', err);
+      alert('Error al crear la campaña. Verifique los datos.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,7 +138,7 @@ export default function CampaniaForm() {
       <div className="flex items-center text-sm text-gray-500 mb-8">
         <Link href="/campanias" className="hover:text-[#015f33] transition-colors">Campañas</Link>
         <ChevronRight size={16} className="mx-2" />
-        <span className="text-gray-800 font-semibold">Nueva Campaña</span>
+        <span className="text-gray-800 font-semibold">{editId ? 'Editar' : 'Nueva'} Campaña</span>
       </div>
 
       <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-8 md:p-10 shadow-sm border border-white/60">
@@ -80,8 +147,8 @@ export default function CampaniaForm() {
             <CalendarPlus size={24} strokeWidth={2} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Crear Nueva Campaña</h2>
-            <p className="text-gray-500 text-sm mt-1">Ingresa los detalles de la nueva campaña de salud animal</p>
+            <h2 className="text-2xl font-bold text-gray-800">{editId ? 'Editar Campaña' : 'Crear Nueva Campaña'}</h2>
+            <p className="text-gray-500 text-sm mt-1">{editId ? 'Actualiza los detalles de la campaña seleccionada' : 'Ingresa los detalles de la nueva campaña de salud animal'}</p>
           </div>
         </div>
 
@@ -133,27 +200,19 @@ export default function CampaniaForm() {
               />
             </div>
 
-            {/* Responsable y Estado */}
-            <div className="space-y-2">
-              <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                Responsable <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <select
-                  name="responsable_id"
-                  required
-                  value={formData.responsable_id}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#11ba82] focus:border-[#11ba82] outline-none transition-all text-[15px] appearance-none"
-                >
-                  <option value="" disabled>Seleccione un responsable</option>
-                  {mockActivePersonal.map(personal => (
-                    <option key={personal.id} value={personal.id}>{personal.nombre}</option>
-                  ))}
-                </select>
-                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 rotate-90 pointer-events-none" size={18} />
-              </div>
-            </div>
+            {/* Responsable */}
+            <SearchableSelect 
+              label="Responsable"
+              required
+              placeholder={fetchingPersonal ? 'Cargando personal...' : 'Seleccione un responsable'}
+              value={formData.responsable_id}
+              onChange={(val) => setFormData(prev => ({ ...prev, responsable_id: val.toString() }))}
+              options={personal.map(p => ({
+                id: p.id,
+                label: `${p.nombre} ${p.paterno} ${p.materno}`
+              }))}
+              disabled={fetchingPersonal}
+            />
 
             <div className="space-y-2">
               <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
@@ -197,10 +256,11 @@ export default function CampaniaForm() {
           <div className="pt-8 flex items-center gap-6 border-t border-gray-100">
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:opacity-90 active:scale-[0.98] text-white font-bold rounded-xl transition-all shadow-sm shadow-[#2ecc71]/30 text-[15px]"
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:opacity-90 active:scale-[0.98] text-white font-bold rounded-xl transition-all shadow-sm shadow-[#2ecc71]/30 text-[15px] disabled:opacity-50"
             >
-              <CalendarPlus size={20} strokeWidth={2.5} />
-              Crear Campaña
+              {loading ? <Loader2 size={20} className="animate-spin" /> : (editId ? <CheckCircle size={20} strokeWidth={2.5} /> : <CalendarPlus size={20} strokeWidth={2.5} />)}
+              {editId ? 'Guardar Cambios' : 'Crear Campaña'}
             </button>
             <Link
               href="/campanias"
@@ -220,9 +280,9 @@ export default function CampaniaForm() {
               <div className="w-16 h-16 bg-[#11ba82]/10 text-[#11ba82] rounded-full flex items-center justify-center mb-4">
                 <CheckCircle size={32} strokeWidth={1.5} />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Confirmar Creación</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">{editId ? 'Confirmar Edición' : 'Confirmar Creación'}</h3>
               <p className="text-gray-600 mb-5 text-[14px]">
-                Revisa los datos antes de confirmar la creación de la nueva campaña.
+                Revisa los datos antes de confirmar los cambios en la campaña.
               </p>
               
               <div className="w-full text-left bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-5 space-y-3 text-[14px]">
@@ -253,10 +313,12 @@ export default function CampaniaForm() {
               </button>
               <button
                 type="button"
+                disabled={loading}
                 onClick={handleConfirmSubmit}
-                className="flex-1 px-6 py-2.5 bg-[#11ba82] text-white font-bold rounded-xl hover:bg-[#0e9d6d] active:bg-[#0c8a60] transition-colors shadow-sm shadow-[#11ba82]/20"
+                className="flex-1 px-6 py-2.5 bg-[#11ba82] text-white font-bold rounded-xl hover:bg-[#0e9d6d] active:bg-[#0c8a60] transition-colors shadow-sm shadow-[#11ba82]/20 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                Confirmar y crear
+                {loading && <Loader2 size={18} className="animate-spin" />}
+                {editId ? 'Confirmar cambios' : 'Confirmar y crear'}
               </button>
             </div>
           </div>

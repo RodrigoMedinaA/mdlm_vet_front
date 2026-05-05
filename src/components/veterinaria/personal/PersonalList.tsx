@@ -1,91 +1,37 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Plus, UserX, UserCheck, AlertTriangle, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, UserX, UserCheck, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-interface Personal {
-  id: string;
-  tipo_doc: string;
-  nro_doc: string;
-  nombre: string;
-  paterno: string;
-  materno: string;
-  email: string;
-  celular: string;
-  especialidad: string;
-  rol_sistema: string;
-  estado: 'activo' | 'inactivo';
-  user: any | null;
-}
-
-const mockPersonalData: Personal[] = [
-  {
-    id: '1',
-    tipo_doc: 'DNI',
-    nro_doc: '74082478',
-    nombre: 'Juan',
-    paterno: 'Perez',
-    materno: 'Gomez',
-    email: 'juan.perez@example.com',
-    celular: '999888777',
-    especialidad: 'Cardiología',
-    rol_sistema: 'veterinario',
-    estado: 'activo',
-    user: { id: 'u1' }
-  },
-  {
-    id: '2',
-    tipo_doc: 'DNI',
-    nro_doc: '72345678',
-    nombre: 'Ana',
-    paterno: 'Maria',
-    materno: 'Torres',
-    email: 'ana.torres@example.com',
-    celular: '988777666',
-    especialidad: 'Cirugía',
-    rol_sistema: 'veterinario',
-    estado: 'activo',
-    user: { id: 'u2' }
-  },
-  {
-    id: '3',
-    tipo_doc: 'CE',
-    nro_doc: '00123456',
-    nombre: 'Carlos',
-    paterno: 'Diaz',
-    materno: 'Ruiz',
-    email: 'carlos.diaz@example.com',
-    celular: '977666555',
-    especialidad: 'Recepción',
-    rol_sistema: 'recepcionista',
-    estado: 'inactivo',
-    user: { id: 'u3' }
-  },
-  {
-    id: '4',
-    tipo_doc: 'CE',
-    nro_doc: '00654321',
-    nombre: 'Luis',
-    paterno: 'Ramirez',
-    materno: 'Soto',
-    email: 'luis.ramirez@example.com',
-    celular: '966555444',
-    especialidad: 'Laboratorio',
-    rol_sistema: 'veterinario',
-    estado: 'activo',
-    user: null
-  }
-];
+import { personalService, Personal } from '@/utils/personalService';
+import { useRouter } from 'next/navigation';
 
 export default function PersonalList() {
-  const [personal, setPersonal] = useState<Personal[]>(mockPersonalData);
+  const router = useRouter();
+  const [personal, setPersonal] = useState<Personal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [userToDeactivate, setUserToDeactivate] = useState<Personal | null>(null);
   const [userToReactivate, setUserToReactivate] = useState<Personal | null>(null);
 
+  useEffect(() => {
+    fetchPersonal();
+  }, []);
+
+  const fetchPersonal = async () => {
+    try {
+      setLoading(true);
+      const data = await personalService.getAll();
+      setPersonal(data);
+    } catch (err) {
+      console.error('Error fetching personal:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredPersonal = personal.filter(p => {
-    const fullName = `${p.nombre} ${p.paterno} ${p.materno}`.toLowerCase();
+    const fullName = p.nombre_completo?.toLowerCase() || '';
     return fullName.includes(searchTerm.toLowerCase()) || p.nro_doc.includes(searchTerm);
   });
 
@@ -104,9 +50,11 @@ export default function PersonalList() {
   };
 
   const handleResendInvitation = (person: Personal) => {
-    console.log(`Reenviando invitación a ${person.email}...`);
-    // Aquí iría la llamada al endpoint POST /api/personal/{id}/reenviar-invitacion
-    alert(`Se ha reenviado la invitación a ${person.email}`);
+    // console.log(`Reenviando invitación a ${person.user?.email}...`);
+  };
+
+  const handleRowClick = (id: string) => {
+    router.push(`/personal/crear?edit=${id}`);
   };
 
   return (
@@ -145,74 +93,76 @@ export default function PersonalList() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/80 border-b border-gray-100 text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-                <th className="p-4 w-12 text-center"></th>
-                <th className="p-4">Tipo y Número de Doc</th>
+                <th className="p-4 w-12 text-center">Acciones</th>
+                <th className="p-4">Número de Doc</th>
                 <th className="p-4">Nombres y Apellidos</th>
                 <th className="p-4">Correo Electrónico</th>
                 <th className="p-4">Número de Celular</th>
-                <th className="p-4">Especialidad</th>
-                <th className="p-4">Rol</th>
+                <th className="p-4">Profesión</th>
                 <th className="p-4 text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredPersonal.map((person) => (
-                <tr key={person.id} className="hover:bg-green-50/30 transition-colors group">
-                  <td className="p-4 text-center align-middle">
-                    {person.user === null ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 size={32} className="animate-spin text-[#11ba82]" />
+                      <span>Cargando directorio de personal...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredPersonal.map((person) => (
+                <tr 
+                  key={person.id} 
+                  onClick={() => handleRowClick(person.id)}
+                  className="hover:bg-green-50/30 transition-colors group cursor-pointer"
+                >
+                  <td className="p-4 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1">
+                      {person.user === null && (
+                        <button
+                          onClick={() => handleResendInvitation(person)}
+                          className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                          title="Reenviar invitación"
+                        >
+                          <Send size={18} strokeWidth={1.5} className="-ml-0.5" />
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleResendInvitation(person)}
-                        className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
-                        title="Reenviar invitación"
-                      >
-                        <Send size={18} strokeWidth={1.5} className="-ml-0.5" />
-                      </button>
-                    ) : person.estado === 'activo' ? (
-                      <button
-                        onClick={() => setUserToDeactivate(person)}
+                        title="Eliminar registro"
+                        onClick={() => {
+                          if (confirm('¿Estás seguro de eliminar a este personal?')) {
+                            personalService.delete(person.id).then(() => fetchPersonal());
+                          }
+                        }}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                        title="Desactivar personal"
                       >
                         <UserX size={20} strokeWidth={1.5} />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => setUserToReactivate(person)}
-                        className="p-2 text-gray-400 hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-full transition-all"
-                        title="Reintegrar personal"
-                      >
-                        <UserCheck size={20} strokeWidth={1.5} />
-                      </button>
-                    )}
+                    </div>
                   </td>
                   <td className="p-4 align-middle">
                     <span className="font-bold text-gray-800 text-[14px]">
-                      {person.tipo_doc}: {person.nro_doc}
+                      {person.nro_doc}
                     </span>
                   </td>
                   <td className="p-4 align-middle">
                     <span className="text-[14px] text-gray-700 font-medium">
-                      {`${person.nombre} ${person.paterno} ${person.materno}`}
+                      {person.nombre_completo}
                     </span>
                   </td>
                   <td className="p-4 text-gray-600 align-middle text-[14px]">{person.email}</td>
                   <td className="p-4 text-gray-600 align-middle text-[14px]">{person.celular}</td>
-                  <td className="p-4 text-gray-600 align-middle text-[14px]">{person.especialidad}</td>
-                  <td className="p-4 text-gray-600 align-middle text-[14px] capitalize">{person.rol_sistema}</td>
+                  <td className="p-4 text-gray-600 align-middle text-[14px]">{person.profesion}</td>
                   <td className="p-4 align-middle text-center">
-                    {person.user === null ? (
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-bold min-w-[80px] bg-yellow-100/80 text-yellow-700 whitespace-nowrap">
-                        Pendiente de confirmación
-                      </span>
-                    ) : (
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-bold min-w-[80px] ${
-                        person.estado === 'activo' 
-                          ? 'bg-green-100/80 text-green-700' 
-                          : 'bg-red-100/80 text-red-600'
-                      }`}>
-                        {person.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                      </span>
-                    )}
+                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-bold min-w-[80px] whitespace-nowrap ${
+                      person.user === null 
+                        ? 'bg-yellow-100/80 text-yellow-700' 
+                        : 'bg-green-100/80 text-green-700'
+                    }`}>
+                      {person.user === null ? 'Pendiente de confirmación' : 'Activo'}
+                    </span>
                   </td>
                 </tr>
               ))}

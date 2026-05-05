@@ -6,6 +6,7 @@ import PropietarioModal from '../mascotas/PropietarioModal';
 import { mascotaService } from '@/utils/mascotaService';
 import { Propietario } from '@/interfaces/Mascota';
 import { adopcionService } from '@/utils/adopcionService';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 
 interface AdopcionFormModalProps {
   petId: string;
@@ -107,33 +108,29 @@ export default function AdopcionFormModal({ petId, petName, onClose, onSuccess }
             <div className="p-6 space-y-6">
               
               {/* Nuevo Propietario */}
-              <div>
-                <label className="block text-[13px] font-bold text-gray-700 mb-2">
-                  Nuevo Propietario <span className="text-pink-500">*</span>
-                </label>
-                <div className="flex">
-                  <select 
-                    className="flex-1 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
-                    value={nuevoPropietarioId}
-                    onChange={(e) => setNuevoPropietarioId(e.target.value)}
-                    disabled={loadingData}
-                  >
-                    <option value="">{loadingData ? 'Cargando propietarios...' : 'Seleccione una opción'}</option>
-                    {owners.map(owner => (
-                      <option key={owner.id} value={owner.id}>
-                        {owner.nombre} {owner.paterno} (DNI: {owner.nro_doc})
-                      </option>
-                    ))}
-                  </select>
-                  <button 
-                    type="button"
-                    onClick={() => setIsPropietarioModalOpen(true)}
-                    className="px-4 py-2.5 bg-white border border-l-0 border-gray-200 rounded-r-xl hover:bg-gray-50 text-gray-500 transition-colors flex items-center justify-center"
-                    title="Registrar nuevo propietario"
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
+              <div className="flex gap-2 items-end">
+                <SearchableSelect 
+                  label="Nuevo Propietario"
+                  required
+                  className="flex-1"
+                  placeholder={loadingData ? 'Cargando propietarios...' : 'Seleccione un propietario'}
+                  value={nuevoPropietarioId}
+                  onChange={(val) => setNuevoPropietarioId(val.toString())}
+                  options={owners.map(o => ({
+                    id: o.id,
+                    label: `${o.nombre} ${o.paterno}`,
+                    sublabel: `DNI: ${o.nro_doc}`
+                  }))}
+                  disabled={loadingData}
+                />
+                <button 
+                  type="button"
+                  onClick={() => setIsPropietarioModalOpen(true)}
+                  className="mb-[2px] h-[45px] w-[45px] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 shadow-sm"
+                  title="Registrar nuevo propietario"
+                >
+                  <Plus size={18} />
+                </button>
               </div>
 
               {/* Observaciones */}
@@ -161,20 +158,17 @@ export default function AdopcionFormModal({ petId, petName, onClose, onSuccess }
                 </label>
 
                 {isCampañaHabilitada && (
-                  <div className="mt-2 animate-in slide-in-from-top-2 fade-in duration-200">
-                    <label className="block text-[13px] font-bold text-gray-700 mb-2">
-                      Campaña de Adopción
-                    </label>
-                    <select 
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm appearance-none text-gray-600"
+                  <div className="mt-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <SearchableSelect 
+                      label="Campaña de Adopción"
+                      placeholder="Seleccione una campaña"
                       value={campaniaId}
-                      onChange={(e) => setCampaniaId(e.target.value)}
-                    >
-                      <option value="">Seleccione una campaña en curso</option>
-                      {campaigns.map(camp => (
-                        <option key={camp.id} value={camp.id}>{camp.nombre}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setCampaniaId(val.toString())}
+                      options={campaigns.map(c => ({
+                        id: c.id,
+                        label: c.nombre
+                      }))}
+                    />
                   </div>
                 )}
               </div>

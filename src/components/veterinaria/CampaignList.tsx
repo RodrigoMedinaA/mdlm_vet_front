@@ -79,9 +79,10 @@ export default function CampaignList({ campaigns, isLoading, error, onClose }: C
               <EstadoBadge estado={campaign.estado} />
             </div>
 
-            <p className="text-gray-500 text-xs mb-3 leading-relaxed">
-              {campaign.descripcion}
-            </p>
+            <div 
+              className="text-gray-500 text-xs mb-3 leading-relaxed campaign-description"
+              dangerouslySetInnerHTML={{ __html: campaign.descripcion }}
+            />
 
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
               <span className="flex items-center gap-1">

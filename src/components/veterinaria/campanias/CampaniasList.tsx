@@ -48,7 +48,7 @@ export default function CampaniasList() {
   const [campaniaToStart, setCampaniaToStart] = useState<Campania | null>(null);
   const [campaniaToCancel, setCampaniaToCancel] = useState<Campania | null>(null);
   const [campaniaToFinish, setCampaniaToFinish] = useState<Campania | null>(null);
-  
+
   // Finish Modal State
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [insumosConsumidos, setInsumosConsumidos] = useState<Array<{ medicamento_id: string, cantidad: number }>>([]);
@@ -79,8 +79,8 @@ export default function CampaniasList() {
     }
   };
 
-  const filteredCampanias = campanias.filter(c => 
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredCampanias = campanias.filter(c =>
+    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.lugar || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -184,20 +184,20 @@ export default function CampaniasList() {
           <h2 className="text-2xl font-bold text-gray-800">Gestión de Campañas</h2>
           <p className="text-gray-500 text-sm mt-1">Administra las campañas de salud y registro animal</p>
         </div>
-        
+
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar campaña..." 
+            <input
+              type="text"
+              placeholder="Buscar campaña..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#11ba82] focus:border-[#11ba82] outline-none transition-all text-sm shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Link 
-            href="/campanias/crear" 
+          <Link
+            href="/campanias/crear"
             className="flex items-center gap-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
           >
             <Plus size={18} strokeWidth={2} />
@@ -233,14 +233,13 @@ export default function CampaniasList() {
                   </td>
                 </tr>
               ) : filteredCampanias.map((campania) => (
-                <tr 
-                  key={campania.id} 
+                <tr
+                  key={campania.id}
                   onClick={() => handleRowClick(campania)}
-                  className={`hover:bg-green-50/30 transition-colors group ${
-                    (campania.estado.toLowerCase() === 'planificada' || campania.estado.toLowerCase() === 'programada') 
-                      ? 'cursor-pointer' 
+                  className={`hover:bg-green-50/30 transition-colors group ${(campania.estado.toLowerCase() === 'planificada' || campania.estado.toLowerCase() === 'programada')
+                      ? 'cursor-pointer'
                       : ''
-                  }`}
+                    }`}
                 >
                   <td className="p-4 align-middle" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1">
@@ -262,7 +261,7 @@ export default function CampaniasList() {
                           </button>
                         </>
                       )}
-                      
+
                       {campania.estado === 'en_curso' && (
                         <>
                           <Link
@@ -298,12 +297,12 @@ export default function CampaniasList() {
                     </span>
                   </td>
                   <td className="p-4 align-middle text-center">
-                    <div 
+                    <div
                       className="inline-flex p-2 text-gray-400 hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-xl transition-all cursor-help relative group/tooltip"
                     >
                       <FileText size={20} strokeWidth={1.5} />
                       {/* Tooltip */}
-                      <div 
+                      <div
                         className="absolute left-full top-1/2 -translate-y-1/2 ml-3 w-64 p-3 bg-gray-900 text-white text-[12px] leading-relaxed rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl z-50 pointer-events-none text-left prose prose-invert prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: campania.descripcion }}
                       />
@@ -322,7 +321,7 @@ export default function CampaniasList() {
               ))}
             </tbody>
           </table>
-          
+
           {filteredCampanias.length === 0 && (
             <div className="text-center py-16 text-gray-500 bg-gray-50/50">
               <p className="text-lg font-medium text-gray-600 mb-1">No hay campañas</p>
@@ -348,7 +347,7 @@ export default function CampaniasList() {
                 Su estado pasará a "En Curso" y se habilitará la recolección de estadísticas.
               </p>
             </div>
-            
+
             <div className="flex justify-between gap-3">
               <button
                 onClick={() => setCampaniaToStart(null)}
@@ -383,7 +382,7 @@ export default function CampaniasList() {
                 Esta acción no se puede deshacer y su estado pasará a ser "Cancelada".
               </p>
             </div>
-            
+
             <div className="flex justify-between gap-3">
               <button
                 onClick={() => setCampaniaToCancel(null)}
@@ -419,7 +418,7 @@ export default function CampaniasList() {
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center px-1">
                 <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">Insumos / Medicamentos</span>
-                <button 
+                <button
                   onClick={addInsumo}
                   className="text-[12px] font-bold text-[#11ba82] hover:underline flex items-center gap-1"
                 >
@@ -446,7 +445,7 @@ export default function CampaniasList() {
                           <option key={m.id} value={m.id}>{m.nombre} (Stock: {m.stock})</option>
                         ))}
                       </select>
-                      <input 
+                      <input
                         type="number"
                         min="1"
                         placeholder="Cant."
@@ -454,7 +453,7 @@ export default function CampaniasList() {
                         onChange={(e) => updateInsumo(idx, 'cantidad', parseInt(e.target.value))}
                         className="w-20 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#11ba82]/30"
                       />
-                      <button 
+                      <button
                         onClick={() => removeInsumo(idx)}
                         className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                       >
@@ -465,7 +464,7 @@ export default function CampaniasList() {
                 </div>
               )}
             </div>
-            
+
             <div className="flex justify-between gap-3">
               <button
                 disabled={isFinishing}

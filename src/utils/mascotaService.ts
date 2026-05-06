@@ -92,5 +92,11 @@ export const mascotaService = {
   getAnimalCondiciones: async (animalId: string): Promise<any[]> => {
     const response = await api.get(`/condiciones?animal_id=${animalId}`);
     return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  // Consultas
+  createConsulta: async (data: any): Promise<any> => {
+    const response = await api.post('/consultas', data);
+    return response.data.data || response.data;
   }
 };

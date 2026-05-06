@@ -69,10 +69,13 @@ export default function MascotaHistorial({ id }: { id: string }) {
             <Download size={18} />
             <span>Exportar en PDF</span>
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap">
+          <Link 
+            href={`/atenciones/nueva?mascota_id=${id}`}
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
+          >
             <Plus size={18} />
             <span>Nueva atención</span>
-          </button>
+          </Link>
         </div>
       </div>
 

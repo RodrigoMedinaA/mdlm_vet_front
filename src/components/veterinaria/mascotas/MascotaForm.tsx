@@ -9,10 +9,11 @@ import SearchableSelect from '@/components/ui/SearchableSelect';
 
 interface MascotaFormProps {
   onCancel: () => void;
+  onSuccess?: (mascota: Mascota) => void;
   editId?: string;
 }
 
-export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
+export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaFormProps) {
   const [isPropietarioModalOpen, setIsPropietarioModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [owners, setOwners] = useState<Propietario[]>([]);
@@ -70,20 +71,27 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
     e.preventDefault();
     setLoading(true);
     try {
+      let pet;
       if (editId) {
-        await mascotaService.updateAnimal(editId, formData);
+        pet = await mascotaService.updateAnimal(editId, formData);
         alert('Mascota actualizada con éxito');
       } else {
-        await mascotaService.createAnimal(formData);
+        pet = await mascotaService.createAnimal(formData);
         alert('Mascota creada con éxito');
       }
-      onCancel();
+      if (onSuccess) onSuccess(pet);
+      else onCancel();
     } catch (err) {
       console.error('Error saving animal:', err);
       alert('Error al guardar la mascota. Verifique los datos.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePropietarioSuccess = (newOwner: Propietario) => {
+    setOwners(prev => [newOwner, ...prev]);
+    setFormData(prev => ({ ...prev, propietario_id: newOwner.id }));
   };
 
   if (fetchingData) {
@@ -112,30 +120,30 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
 
         {/* Form Container */}
         <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
-          
+
           <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Información de la Mascota</h3>
             </div>
-            
+
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* Propietario with + button */}
               <div className="flex gap-2 items-end">
-                <SearchableSelect 
+                <SearchableSelect
                   label="Propietario"
                   required
                   className="flex-1"
                   placeholder="Seleccione un propietario"
                   value={formData.propietario_id}
-                  onChange={(val) => setFormData({...formData, propietario_id: val.toString()})}
+                  onChange={(val) => setFormData({ ...formData, propietario_id: val.toString() })}
                   options={owners.map(o => ({
                     id: o.id,
                     label: `${o.nombre} ${o.paterno}`,
                     sublabel: `Doc: ${o.nro_doc}`
                   }))}
                 />
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsPropietarioModalOpen(true)}
                   className="mb-[2px] h-[45px] w-[45px] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 shadow-sm"
@@ -149,33 +157,33 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
                 <label className="block text-[13px] font-bold text-gray-700 mb-2">
                   Nombre de la Mascota <span className="text-pink-500">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={formData.nombre}
-                  onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
                 />
               </div>
 
-              <SearchableSelect 
+              <SearchableSelect
                 label="Especie"
                 required
                 placeholder="Seleccione una especie"
                 value={formData.especie_id}
-                onChange={(val) => setFormData({...formData, especie_id: val.toString(), raza_id: ''})}
+                onChange={(val) => setFormData({ ...formData, especie_id: val.toString(), raza_id: '' })}
                 options={species.map(s => ({
                   id: s.id,
                   label: s.nombre
                 }))}
               />
 
-              <SearchableSelect 
+              <SearchableSelect
                 label="Raza"
                 required
                 placeholder="Seleccione una raza"
                 value={formData.raza_id}
-                onChange={(val) => setFormData({...formData, raza_id: val.toString()})}
+                onChange={(val) => setFormData({ ...formData, raza_id: val.toString() })}
                 options={razas
                   .filter(r => !formData.especie_id || r.especie_id === formData.especie_id)
                   .map(r => ({
@@ -185,11 +193,11 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
                 }
               />
 
-              <SearchableSelect 
+              <SearchableSelect
                 label="Sexo"
                 required
                 value={formData.sexo}
-                onChange={(val) => setFormData({...formData, sexo: val.toString() as any})}
+                onChange={(val) => setFormData({ ...formData, sexo: val.toString() as any })}
                 options={[
                   { id: 'Macho', label: 'Macho' },
                   { id: 'Hembra', label: 'Hembra' }
@@ -200,20 +208,20 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
                 <label className="block text-[13px] font-bold text-gray-700 mb-2">
                   Color <span className="text-pink-500">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={formData.color}
-                  onChange={(e) => setFormData({...formData, color: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
                 />
               </div>
 
-              <SearchableSelect 
+              <SearchableSelect
                 label="Esterilización"
                 required
                 value={formData.esterilizacion ? '1' : '0'}
-                onChange={(val) => setFormData({...formData, esterilizacion: val === '1'})}
+                onChange={(val) => setFormData({ ...formData, esterilizacion: val === '1' })}
                 options={[
                   { id: '1', label: 'Sí' },
                   { id: '0', label: 'No' }
@@ -222,17 +230,17 @@ export default function MascotaForm({ onCancel, editId }: MascotaFormProps) {
 
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="bg-[#2ecc71] hover:bg-[#27ae60] text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading && <Loader2 className="animate-spin" size={18} />}
               {editId ? 'Guardar Cambios' : 'Crear Mascota'}
             </button>
-            <button 
+            <button
               type="button"
               onClick={onCancel}
               className="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"

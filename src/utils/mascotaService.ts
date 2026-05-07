@@ -111,4 +111,26 @@ export const mascotaService = {
     const response = await api.post(`/animales/${animalId}/condiciones`, data);
     return response.data.data || response.data;
   },
+
+  // Registrar fallecimiento
+  registrarFallecimiento: async (animalId: string): Promise<any> => {
+    const response = await api.patch(`/animales/${animalId}/fallecimiento`);
+    return response.data.data || response.data;
+  },
+
+  // Cliente (Portal de Propietarios)
+  getClientePerfil: async (): Promise<Propietario> => {
+    const response = await api.get('/cliente/perfil');
+    return response.data.data || response.data;
+  },
+
+  getClienteMascotas: async (): Promise<Mascota[]> => {
+    const response = await api.get('/cliente/mascotas');
+    return Array.isArray(response.data) ? response.data : (response.data.data || []);
+  },
+
+  getClienteMascotaById: async (id: string): Promise<Mascota> => {
+    const response = await api.get(`/cliente/mascotas/${id}`);
+    return response.data.data || response.data;
+  },
 };

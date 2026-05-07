@@ -8,11 +8,14 @@ import { mascotaService } from '@/utils/mascotaService';
 import { Mascota } from '@/interfaces/Mascota';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function MascotasList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const isOwner = user?.roles?.includes('propietario');
   
   const [pets, setPets] = useState<Mascota[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,13 +26,17 @@ export default function MascotasList() {
   const isCreating = searchParams.get('new') === 'true';
 
   useEffect(() => {
-    fetchPets();
-  }, []);
+    if (user) {
+      fetchPets();
+    }
+  }, [user, isOwner]);
 
   const fetchPets = async () => {
     try {
       setLoading(true);
-      const data = await mascotaService.getAllAnimals({ albergue: false });
+      const data = isOwner 
+        ? await mascotaService.getClienteMascotas()
+        : await mascotaService.getAllAnimals({ albergue: false });
       setPets(data);
       setError(null);
     } catch (err) {
@@ -92,7 +99,7 @@ export default function MascotasList() {
     <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-7 shadow-sm border border-white/60">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Directorio de Mascotas</h2>
+          <h2 className="text-xl font-bold text-gray-800">Gestión de mascotas</h2>
           <p className="text-sm text-gray-500 mt-1">Gestiona las mascotas registradas en el sistema</p>
         </div>
         
@@ -107,13 +114,6 @@ export default function MascotasList() {
               className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm placeholder:text-gray-400"
             />
           </div>
-          <button 
-            onClick={handleCreateClick}
-            className="flex items-center space-x-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
-          >
-            <Plus size={18} />
-            <span>Crear Mascota</span>
-          </button>
         </div>
       </div>
       
@@ -163,13 +163,6 @@ export default function MascotasList() {
                         className="p-1.5 text-gray-400 hover:text-[#11ba82] hover:bg-[#11ba82]/10 rounded-full transition-all"
                       >
                         <FileText size={18} strokeWidth={2} />
-                      </button>
-                      <button 
-                        title="Eliminar registro"
-                        onClick={(e) => handleDelete(e, pet.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                      >
-                        <Trash2 size={18} strokeWidth={2} />
                       </button>
                     </div>
                   </td>

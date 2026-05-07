@@ -42,13 +42,27 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
     e.preventDefault();
     setLoading(true);
     try {
-      const newOwner = await mascotaService.createPropietario(formData);
+      // Limpiamos y preparamos los datos para el backend
+      const payload = {
+        nombre: formData.nombre,
+        paterno: formData.paterno,
+        materno: formData.materno,
+        email: formData.email,
+        // El backend espera el 'codigo' (DNI, CE, etc.) no el UUID
+        tipo_doc: formData.tipo_documento_id,
+        nro_doc: parseInt(formData.nro_doc),
+        celular: formData.celular ? parseInt(formData.celular) : null,
+        nro_emergencia: formData.nro_emergencia ? parseInt(formData.nro_emergencia) : null,
+      };
+
+      const newOwner = await mascotaService.createPropietario(payload);
       alert('Propietario creado con éxito');
       if (onSuccess) onSuccess(newOwner);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving owner:', err);
-      alert('Error al guardar el propietario. Por favor, verifica los datos.');
+      const errorMsg = err.response?.data?.message || 'Error al guardar el propietario. Por favor, verifica los datos.';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -95,7 +109,7 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
                 value={formData.tipo_documento_id}
                 onChange={(val) => setFormData({...formData, tipo_documento_id: val.toString()})}
                 options={tipoDocumentos.map(td => ({
-                  id: td.id,
+                  id: td.codigo, // Usamos el código para cumplir con la validación del backend
                   label: td.nombre
                 }))}
               />
@@ -170,7 +184,7 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
             </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 pb-32">
                <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-2">
                   Celular

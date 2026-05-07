@@ -96,7 +96,7 @@ export default function SearchableSelect({
             </div>
           </div>
           
-          <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-200">
             {filteredOptions.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-400 text-sm">
                 No se encontraron resultados
@@ -105,7 +105,9 @@ export default function SearchableSelect({
               filteredOptions.map((opt) => (
                 <div
                   key={opt.id}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
+                    // Usamos onMouseDown para que se ejecute antes del blur
+                    e.preventDefault();
                     e.stopPropagation();
                     onChange(opt.id);
                     setIsOpen(false);

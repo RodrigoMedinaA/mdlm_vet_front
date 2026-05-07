@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Loader2, HeartPulse, ChevronRight, Dog, Calendar, Check, ChevronLeft, FileText, Lock } from 'lucide-react';
+import { Plus, Loader2, HeartPulse, ChevronRight, Dog, Calendar, Check, ChevronLeft, FileText, Lock, Shield, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { mascotaService } from '@/utils/mascotaService';
+import { catalogoService } from '@/utils/catalogoService';
 import { Mascota } from '@/interfaces/Mascota';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import MascotaModal from '../mascotas/MascotaModal';
@@ -30,19 +31,33 @@ export default function AtencionSelection() {
     cita_id: '', // Disabled for now
   });
 
+  // Step 3: Alergias y Condiciones
+  const [catalogoAlergias, setCatalogoAlergias] = useState<any[]>([]);
+  const [catalogoCondiciones, setCatalogoCondiciones] = useState<any[]>([]);
+  const [selectedAlergiaId, setSelectedAlergiaId] = useState('');
+  const [selectedCondicionId, setSelectedCondicionId] = useState('');
+  const [alergiasList, setAlergiasList] = useState<{alergia_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
+  const [condicionesList, setCondicionesList] = useState<{condicion_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
+
   const selectedMascota = mascotas.find(m => m.id === selectedMascotaId);
 
   useEffect(() => {
-    fetchMascotas();
+    fetchInitialData();
   }, []);
 
-  const fetchMascotas = async () => {
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const data = await mascotaService.getAllAnimals();
-      setMascotas(data);
+      const [animalesData, alergiasData, condicionesData] = await Promise.all([
+        mascotaService.getAllAnimals(),
+        catalogoService.getAlergias(),
+        catalogoService.getCondiciones(),
+      ]);
+      setMascotas(animalesData);
+      setCatalogoAlergias(alergiasData);
+      setCatalogoCondiciones(condicionesData);
     } catch (err) {
-      console.error('Error fetching mascotas:', err);
+      console.error('Error fetching initial data:', err);
     } finally {
       setLoading(false);
     }
@@ -51,6 +66,51 @@ export default function AtencionSelection() {
   const handleMascotaSuccess = (newPet: Mascota) => {
     setMascotas(prev => [newPet, ...prev]);
     setSelectedMascotaId(newPet.id);
+  };
+
+  // --- Helpers para agregar alergias/condiciones a la lista local ---
+  const handleAddAlergia = () => {
+    if (!selectedAlergiaId) return;
+    if (alergiasList.find(a => a.alergia_id === selectedAlergiaId)) return;
+    const cat = catalogoAlergias.find(c => c.id === selectedAlergiaId);
+    setAlergiasList(prev => [...prev, {
+      alergia_id: selectedAlergiaId,
+      nombre: cat?.nombre || '',
+      observaciones: '',
+      severidad: 'leve',
+      estado_clinico: 'activa',
+    }]);
+    setSelectedAlergiaId('');
+  };
+
+  const handleRemoveAlergia = (id: string) => {
+    setAlergiasList(prev => prev.filter(a => a.alergia_id !== id));
+  };
+
+  const handleUpdateAlergia = (id: string, field: string, value: string) => {
+    setAlergiasList(prev => prev.map(a => a.alergia_id === id ? { ...a, [field]: value } : a));
+  };
+
+  const handleAddCondicion = () => {
+    if (!selectedCondicionId) return;
+    if (condicionesList.find(c => c.condicion_id === selectedCondicionId)) return;
+    const cat = catalogoCondiciones.find(c => c.id === selectedCondicionId);
+    setCondicionesList(prev => [...prev, {
+      condicion_id: selectedCondicionId,
+      nombre: cat?.nombre || '',
+      observaciones: '',
+      severidad: 'leve',
+      estado_clinico: 'activa',
+    }]);
+    setSelectedCondicionId('');
+  };
+
+  const handleRemoveCondicion = (id: string) => {
+    setCondicionesList(prev => prev.filter(c => c.condicion_id !== id));
+  };
+
+  const handleUpdateCondicion = (id: string, field: string, value: string) => {
+    setCondicionesList(prev => prev.map(c => c.condicion_id === id ? { ...c, [field]: value } : c));
   };
 
   const handleNextStep = () => {
@@ -62,6 +122,8 @@ export default function AtencionSelection() {
         return;
       }
       setCurrentStep(3);
+    } else if (currentStep === 3) {
+      setCurrentStep(4);
     }
   };
 
@@ -76,14 +138,37 @@ export default function AtencionSelection() {
     
     setSubmitting(true);
     try {
+      // 1. Crear la consulta
       const payload = {
         ...consultaData,
         animal_id: selectedMascotaId,
         personal_id: user.id, 
         peso_registrado: parseFloat(consultaData.peso_registrado)
       };
+      const consultaCreada = await mascotaService.createConsulta(payload);
+      const consultaId = consultaCreada.id;
 
-      await mascotaService.createConsulta(payload);
+      // 2. Registrar alergias
+      for (const alergia of alergiasList) {
+        await mascotaService.createAnimalAlergia(selectedMascotaId, {
+          alergia_id: alergia.alergia_id,
+          observaciones: alergia.observaciones,
+          severidad: alergia.severidad,
+          estado_clinico: alergia.estado_clinico,
+        });
+      }
+
+      // 3. Registrar condiciones (con consulta_id)
+      for (const condicion of condicionesList) {
+        await mascotaService.createAnimalCondicion(selectedMascotaId, {
+          condicion_id: condicion.condicion_id,
+          observaciones: condicion.observaciones,
+          severidad: condicion.severidad,
+          estado_clinico: condicion.estado_clinico,
+          consulta_id: consultaId,
+        });
+      }
+
       alert('Atención médica registrada con éxito');
       router.push(`/mascotas/${selectedMascotaId}/historial`);
     } catch (err: any) {
@@ -97,7 +182,8 @@ export default function AtencionSelection() {
   const steps = [
     { number: 1, title: 'Mascota', icon: <Dog size={18} /> },
     { number: 2, title: 'Consulta', icon: <HeartPulse size={18} /> },
-    { number: 3, title: 'Finalizar', icon: <Calendar size={18} /> },
+    { number: 3, title: 'Historial', icon: <Shield size={18} /> },
+    { number: 4, title: 'Finalizar', icon: <Calendar size={18} /> },
   ];
 
   if (loading) {
@@ -368,8 +454,193 @@ export default function AtencionSelection() {
           </div>
         )}
 
-        {/* Step 3: Resumen y Finalizar */}
+        {/* Step 3: Alergias y Condiciones */}
         {currentStep === 3 && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-500">
+            {/* Header Informative */}
+            <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-blue-100 flex items-center justify-center text-blue-500">
+                  <Dog size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Atendiendo a:</p>
+                  <h4 className="text-base font-bold text-gray-800">{selectedMascota?.nombre}</h4>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Responsable:</p>
+                <p className="text-xs font-bold text-gray-600">{user?.name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">
+                  <Shield size={24} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800">Alergias y Condiciones</h3>
+                  <p className="text-gray-500">Registre las alergias y condiciones base del paciente (opcional).</p>
+                </div>
+              </div>
+            </div>
+
+            {/* --- Bloque Alergias --- */}
+            <div className="bg-gradient-to-br from-red-50/40 to-white border border-red-100 rounded-[28px] p-6 space-y-5">
+              <h4 className="text-sm font-bold text-red-700 uppercase tracking-wider flex items-center gap-2">
+                <AlertTriangle size={16} /> Alergias
+              </h4>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <SearchableSelect
+                    placeholder="Buscar alergia en el catálogo..."
+                    value={selectedAlergiaId}
+                    onChange={(val) => setSelectedAlergiaId(val.toString())}
+                    options={catalogoAlergias
+                      .filter(a => !alergiasList.find(al => al.alergia_id === a.id))
+                      .slice(0, 5)
+                      .map(a => ({ id: a.id, label: a.nombre, sublabel: a.descripcion || '' }))}
+                    className="w-full"
+                  />
+                </div>
+                <button
+                  onClick={handleAddAlergia}
+                  disabled={!selectedAlergiaId}
+                  className="h-[42px] px-5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 shadow-sm"
+                >
+                  <Plus size={18} /> Agregar
+                </button>
+              </div>
+              {alergiasList.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  {alergiasList.map(a => (
+                    <div key={a.alergia_id} className="bg-white border border-red-100 rounded-2xl p-4 space-y-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-800">{a.nombre}</span>
+                        <button onClick={() => handleRemoveAlergia(a.alergia_id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Severidad</label>
+                          <select value={a.severidad} onChange={e => handleUpdateAlergia(a.alergia_id, 'severidad', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                            <option value="leve">Leve</option>
+                            <option value="moderado">Moderado</option>
+                            <option value="severo">Severo</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Estado Clínico</label>
+                          <select value={a.estado_clinico} onChange={e => handleUpdateAlergia(a.alergia_id, 'estado_clinico', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20">
+                            <option value="activa">Activa</option>
+                            <option value="inactiva">Inactiva</option>
+                            <option value="resuelta">Resuelta</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Observaciones</label>
+                          <input type="text" value={a.observaciones} onChange={e => handleUpdateAlergia(a.alergia_id, 'observaciones', e.target.value)} placeholder="Notas..." className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {alergiasList.length === 0 && (
+                <p className="text-xs text-gray-400 italic text-center py-2">No se han registrado alergias aún.</p>
+              )}
+            </div>
+
+            {/* --- Bloque Condiciones --- */}
+            <div className="bg-gradient-to-br from-amber-50/40 to-white border border-amber-100 rounded-[28px] p-6 space-y-5">
+              <h4 className="text-sm font-bold text-amber-700 uppercase tracking-wider flex items-center gap-2">
+                <Shield size={16} /> Condiciones Base
+              </h4>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <SearchableSelect
+                    placeholder="Buscar condición en el catálogo..."
+                    value={selectedCondicionId}
+                    onChange={(val) => setSelectedCondicionId(val.toString())}
+                    options={catalogoCondiciones
+                      .filter(c => !condicionesList.find(cl => cl.condicion_id === c.id))
+                      .slice(0, 5)
+                      .map(c => ({ id: c.id, label: c.nombre, sublabel: c.descripcion || '' }))}
+                    className="w-full"
+                  />
+                </div>
+                <button
+                  onClick={handleAddCondicion}
+                  disabled={!selectedCondicionId}
+                  className="h-[42px] px-5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shrink-0 shadow-sm"
+                >
+                  <Plus size={18} /> Agregar
+                </button>
+              </div>
+              {condicionesList.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  {condicionesList.map(c => (
+                    <div key={c.condicion_id} className="bg-white border border-amber-100 rounded-2xl p-4 space-y-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-800">{c.nombre}</span>
+                        <button onClick={() => handleRemoveCondicion(c.condicion_id)} className="text-gray-400 hover:text-amber-600 transition-colors p-1">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Severidad</label>
+                          <select value={c.severidad} onChange={e => handleUpdateCondicion(c.condicion_id, 'severidad', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                            <option value="leve">Leve</option>
+                            <option value="moderado">Moderado</option>
+                            <option value="severo">Severo</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Estado Clínico</label>
+                          <select value={c.estado_clinico} onChange={e => handleUpdateCondicion(c.condicion_id, 'estado_clinico', e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                            <option value="activa">Activa</option>
+                            <option value="inactiva">Inactiva</option>
+                            <option value="resuelta">Resuelta</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Observaciones</label>
+                          <input type="text" value={c.observaciones} onChange={e => handleUpdateCondicion(c.condicion_id, 'observaciones', e.target.value)} placeholder="Notas..." className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {condicionesList.length === 0 && (
+                <p className="text-xs text-gray-400 italic text-center py-2">No se han registrado condiciones aún.</p>
+              )}
+            </div>
+
+            <div className="pt-8 flex justify-between border-t border-gray-100">
+              <button 
+                onClick={handlePrevStep}
+                className="px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center gap-2 hover:-translate-x-1"
+              >
+                <ChevronLeft size={20} strokeWidth={3} />
+                Atrás
+              </button>
+              <button 
+                onClick={handleNextStep}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3 hover:-translate-y-1"
+              >
+                Siguiente
+                <ChevronRight size={20} strokeWidth={3} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Resumen y Finalizar */}
+        {currentStep === 4 && (
           <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-500">
              <div className="space-y-4 text-center">
               <div className="inline-flex p-3 bg-green-100 text-green-600 rounded-2xl mb-2">
@@ -440,6 +711,48 @@ export default function AtencionSelection() {
                   </div>
                 )}
               </div>
+
+              {/* Bloque Alergias y Condiciones Resumen */}
+              {(alergiasList.length > 0 || condicionesList.length > 0) && (
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {alergiasList.length > 0 && (
+                    <div className="bg-red-50/50 border border-red-100 rounded-[28px] p-6">
+                      <h4 className="text-[11px] font-bold text-red-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <AlertTriangle size={14} /> Alergias ({alergiasList.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {alergiasList.map(a => (
+                          <div key={a.alergia_id} className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-gray-700">{a.nombre}</span>
+                            <div className="flex gap-2">
+                              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${a.severidad === 'severo' ? 'bg-red-100 text-red-700' : a.severidad === 'moderado' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>{a.severidad}</span>
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-bold uppercase">{a.estado_clinico}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {condicionesList.length > 0 && (
+                    <div className="bg-amber-50/50 border border-amber-100 rounded-[28px] p-6">
+                      <h4 className="text-[11px] font-bold text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Shield size={14} /> Condiciones ({condicionesList.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {condicionesList.map(c => (
+                          <div key={c.condicion_id} className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-gray-700">{c.nombre}</span>
+                            <div className="flex gap-2">
+                              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${c.severidad === 'severo' ? 'bg-red-100 text-red-700' : c.severidad === 'moderado' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>{c.severidad}</span>
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-bold uppercase">{c.estado_clinico}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">

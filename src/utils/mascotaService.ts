@@ -82,15 +82,15 @@ export const mascotaService = {
     return Array.isArray(response.data) ? response.data : (response.data.data || []);
   },
 
-  // Alergias
+  // Alergias de un animal
   getAnimalAlergias: async (animalId: string): Promise<any[]> => {
-    const response = await api.get(`/alergias?animal_id=${animalId}`);
+    const response = await api.get(`/animales/${animalId}/alergias`);
     return Array.isArray(response.data) ? response.data : (response.data.data || []);
   },
 
-  // Condiciones
+  // Condiciones de un animal
   getAnimalCondiciones: async (animalId: string): Promise<any[]> => {
-    const response = await api.get(`/condiciones?animal_id=${animalId}`);
+    const response = await api.get(`/animales/${animalId}/condiciones`);
     return Array.isArray(response.data) ? response.data : (response.data.data || []);
   },
 
@@ -98,5 +98,17 @@ export const mascotaService = {
   createConsulta: async (data: any): Promise<any> => {
     const response = await api.post('/consultas', data);
     return response.data.data || response.data;
-  }
+  },
+
+  // Crear alergia de animal
+  createAnimalAlergia: async (animalId: string, data: any): Promise<any> => {
+    const response = await api.post(`/animales/${animalId}/alergias`, data);
+    return response.data.data || response.data;
+  },
+
+  // Crear condición de animal
+  createAnimalCondicion: async (animalId: string, data: any): Promise<any> => {
+    const response = await api.post(`/animales/${animalId}/condiciones`, data);
+    return response.data.data || response.data;
+  },
 };

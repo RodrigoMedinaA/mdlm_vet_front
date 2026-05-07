@@ -252,7 +252,7 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
       </form>
 
       {isPropietarioModalOpen && (
-        <PropietarioModal onClose={() => setIsPropietarioModalOpen(false)} />
+        <PropietarioModal onClose={() => setIsPropietarioModalOpen(false)} onSuccess={handlePropietarioSuccess} />
       )}
     </>
   );

@@ -94,15 +94,15 @@ export default function MascotaHistorial({ id }: { id: string }) {
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-[13px] font-semibold">Propietario</span>
                 <span className="text-gray-800 font-medium text-sm text-right">
-                  {mascota.propietario?.nombre} {mascota.propietario?.paterno}<br />
-                  <span className="text-gray-400 text-xs">{mascota.propietario?.celular}</span>
+                  {mascota.propietario}<br />
+                  <span className="text-gray-400 text-xs">{mascota.propietario_celular}</span>
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-[13px] font-semibold">Especie / Raza</span>
                 <span className="text-gray-800 font-medium text-sm text-right">
-                  {mascota.especie?.nombre || 'N/A'}<br />
-                  <span className="text-gray-400 text-xs">{mascota.raza?.nombre || 'N/A'}</span>
+                  {mascota.especie || 'N/A'}<br />
+                  <span className="text-gray-400 text-xs">{mascota.raza || 'N/A'}</span>
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -132,9 +132,9 @@ export default function MascotaHistorial({ id }: { id: string }) {
               </h3>
               {mascota.alergias && mascota.alergias.length > 0 ? (
                 <div className="space-y-2">
-                  {mascota.alergias.map((a: any) => (
-                    <div key={a.id} className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
-                      <span className="font-bold text-red-900">{a.alergia?.nombre || 'Alergia'}</span>
+                  {mascota.alergias.map((a: any, idx: number) => (
+                    <div key={a.id || idx} className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
+                      <span className="font-bold text-red-900">{a.alergia || 'Alergia'}</span>
                       <div className="flex gap-2">
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-100 text-red-700">Sev: {a.severidad}</span>
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{a.estado_clinico}</span>
@@ -156,10 +156,11 @@ export default function MascotaHistorial({ id }: { id: string }) {
               </h3>
               {mascota.condiciones && mascota.condiciones.length > 0 ? (
                 <div className="space-y-2">
-                  {mascota.condiciones.map((c: any) => (
-                    <div key={c.id} className="bg-orange-50/50 border border-orange-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
-                      <span className="font-bold text-orange-900">{c.condicion?.nombre || 'Condición'}</span>
+                  {mascota.condiciones.map((c: any, idx: number) => (
+                    <div key={c.id || idx} className="bg-orange-50/50 border border-orange-100 p-3 rounded-xl flex flex-col gap-1 text-[13px]">
+                      <span className="font-bold text-orange-900">{c.condicion || 'Condición'}</span>
                       <div className="flex gap-2">
+                        {c.severidad && <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-orange-100 text-orange-700">Sev: {c.severidad}</span>}
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white text-gray-500 border border-gray-200">{c.estado_clinico}</span>
                       </div>
                     </div>
@@ -174,14 +175,14 @@ export default function MascotaHistorial({ id }: { id: string }) {
         </div>
 
         {/* Fila Inferior: Timeline */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 sm:p-8 shadow-sm border border-white/60">
-          <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">
+        <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-5 sm:p-6 shadow-sm border border-white/60">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
             <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
               <History size={20} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800">Línea de Tiempo Clínica</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Registro de eventos médicos ordenados por fecha</p>
+              <p className="text-xs text-gray-500">Registro de eventos médicos ordenados por fecha</p>
             </div>
           </div>
 
@@ -189,13 +190,51 @@ export default function MascotaHistorial({ id }: { id: string }) {
             <div className="text-center py-16 text-gray-500">
               <p>Esta mascota aún no tiene eventos registrados en su historial clínico.</p>
             </div>
-          ) : (
-            <div className="relative">
-              {timeline.map((event) => (
-                <TimelineEvent key={event.id} event={event} />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            // Group vaccine/desparasitación events that belong to a consultation
+            const consultaChildEvents = new Map<string, typeof timeline>();
+            const standaloneEvents: typeof timeline = [];
+
+            timeline.forEach(event => {
+              const consultaId = event.detalles?.consulta_id;
+              if (consultaId && event.tipo_evento !== 'Consulta Médica') {
+                if (!consultaChildEvents.has(consultaId)) {
+                  consultaChildEvents.set(consultaId, []);
+                }
+                consultaChildEvents.get(consultaId)!.push(event);
+              } else {
+                standaloneEvents.push(event);
+              }
+            });
+
+            return (
+              <div className="relative">
+                {standaloneEvents.map((event) => (
+                  <div key={event.id}>
+                    <TimelineEvent event={event} />
+                    {/* Show child events (vaccinations, etc.) nested under this consultation */}
+                    {event.tipo_evento === 'Consulta Médica' && consultaChildEvents.has(event.eventable_id) && (
+                      <div className="ml-8 sm:ml-36 pl-4 border-l-2 border-dashed border-emerald-200 mb-2">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest pt-1 pb-1 pl-2">
+                          Procedimientos vinculados
+                        </p>
+                        {consultaChildEvents.get(event.eventable_id)!.map(childEvent => (
+                          <div key={childEvent.id} className="relative py-1.5">
+                            <div className="absolute -left-[17px] top-3 w-3 h-3 rounded-full bg-emerald-100 border-2 border-emerald-400 flex items-center justify-center">
+                              <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                            </div>
+                            <div className="bg-emerald-50/40 border border-emerald-100/50 rounded-xl ml-1">
+                              <TimelineEvent event={childEvent} hideDate={true} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Loader2, HeartPulse, ChevronRight, Dog, Calendar, Check, ChevronLeft, FileText, Lock, Shield, AlertTriangle, X, Trash2 } from 'lucide-react';
+import { Plus, Loader2, HeartPulse, ChevronRight, Dog, Calendar, Check, ChevronLeft, FileText, Lock, Shield, AlertTriangle, X, Trash2, Syringe, Package } from 'lucide-react';
 import { mascotaService } from '@/utils/mascotaService';
 import { catalogoService } from '@/utils/catalogoService';
 import { Mascota } from '@/interfaces/Mascota';
@@ -39,6 +39,24 @@ export default function AtencionSelection() {
   const [alergiasList, setAlergiasList] = useState<{alergia_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
   const [condicionesList, setCondicionesList] = useState<{condicion_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
 
+  // Step 4: Añadidos (Vacunación, Desparasitación, Receta)
+  const [addVacunacion, setAddVacunacion] = useState(false);
+  const [addDesparasitacion, setAddDesparasitacion] = useState(false);
+  const [addReceta, setAddReceta] = useState(false);
+  const [esquemasVacunas, setEsquemasVacunas] = useState<any[]>([]);
+  const [medicamentos, setMedicamentos] = useState<any[]>([]);
+  const [vacunaData, setVacunaData] = useState({
+    esquema_vacuna_id: '',
+    medicamento_id: '',
+    fecha_aplicacion: new Date().toLocaleDateString('en-CA'),
+    fecha_proxima: '',
+    dosis: '',
+    lote: '',
+    fabricante: '',
+    cantidad: '1',
+    observaciones: '',
+  });
+
   const selectedMascota = mascotas.find(m => m.id === selectedMascotaId);
 
   useEffect(() => {
@@ -48,14 +66,18 @@ export default function AtencionSelection() {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [animalesData, alergiasData, condicionesData] = await Promise.all([
+      const [animalesData, alergiasData, condicionesData, esquemasData, medicamentosData] = await Promise.all([
         mascotaService.getAllAnimals(),
         catalogoService.getAlergias(),
         catalogoService.getCondiciones(),
+        catalogoService.getEsquemasVacunas(),
+        catalogoService.getMedicamentos(),
       ]);
       setMascotas(animalesData);
       setCatalogoAlergias(alergiasData);
       setCatalogoCondiciones(condicionesData);
+      setEsquemasVacunas(esquemasData);
+      setMedicamentos(medicamentosData);
     } catch (err) {
       console.error('Error fetching initial data:', err);
     } finally {
@@ -123,7 +145,28 @@ export default function AtencionSelection() {
       }
       setCurrentStep(3);
     } else if (currentStep === 3) {
+      // Validar que todas las alergias agregadas tengan observaciones
+      const alergiaIncompleta = alergiasList.find(a => !a.observaciones.trim());
+      if (alergiaIncompleta) {
+        alert(`La alergia "${alergiaIncompleta.nombre}" necesita observaciones antes de continuar.`);
+        return;
+      }
+      // Validar que todas las condiciones agregadas tengan observaciones
+      const condicionIncompleta = condicionesList.find(c => !c.observaciones.trim());
+      if (condicionIncompleta) {
+        alert(`La condición "${condicionIncompleta.nombre}" necesita observaciones antes de continuar.`);
+        return;
+      }
       setCurrentStep(4);
+    } else if (currentStep === 4) {
+      // Validar formulario de vacunación si está activo
+      if (addVacunacion) {
+        if (!vacunaData.esquema_vacuna_id || !vacunaData.medicamento_id || !vacunaData.dosis || !vacunaData.lote || !vacunaData.cantidad) {
+          alert('Complete todos los campos obligatorios de la vacunación antes de continuar.');
+          return;
+        }
+      }
+      setCurrentStep(5);
     }
   };
 
@@ -169,6 +212,16 @@ export default function AtencionSelection() {
         });
       }
 
+      // 4. Registrar vacunación (si se activó)
+      if (addVacunacion) {
+        await catalogoService.createVacunaAnimal({
+          ...vacunaData,
+          animal_id: selectedMascotaId,
+          cantidad: parseFloat(vacunaData.cantidad),
+          consulta_id: consultaId,
+        });
+      }
+
       alert('Atención médica registrada con éxito');
       router.push(`/mascotas/${selectedMascotaId}/historial`);
     } catch (err: any) {
@@ -183,7 +236,8 @@ export default function AtencionSelection() {
     { number: 1, title: 'Mascota', icon: <Dog size={18} /> },
     { number: 2, title: 'Consulta', icon: <HeartPulse size={18} /> },
     { number: 3, title: 'Historial', icon: <Shield size={18} /> },
-    { number: 4, title: 'Finalizar', icon: <Calendar size={18} /> },
+    { number: 4, title: 'Añadidos', icon: <Package size={18} /> },
+    { number: 5, title: 'Finalizar', icon: <Calendar size={18} /> },
   ];
 
   if (loading) {
@@ -196,11 +250,11 @@ export default function AtencionSelection() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+    <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight">Registro de Atención</h1>
-        <p className="text-gray-500 font-medium">Siga los pasos para completar la atención médica</p>
+      <div className="text-center space-y-1">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Registro de Atención</h1>
+        <p className="text-sm text-gray-500 font-medium">Siga los pasos para completar la atención médica</p>
       </div>
 
       {/* Stepper Indicator */}
@@ -210,13 +264,13 @@ export default function AtencionSelection() {
             <div key={step.number} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center relative">
                 <div 
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 border-2 ${
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 border-2 ${
                     currentStep >= step.number 
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-200' 
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' 
                       : 'bg-white border-gray-200 text-gray-400'
                   } ${currentStep === step.number ? 'scale-110' : ''}`}
                 >
-                  {currentStep > step.number ? <Check size={22} strokeWidth={3} /> : step.icon}
+                  {currentStep > step.number ? <Check size={20} strokeWidth={3} /> : step.icon}
                 </div>
                 <span 
                   className={`absolute -bottom-8 whitespace-nowrap text-[11px] font-bold uppercase tracking-widest transition-colors duration-500 ${
@@ -240,10 +294,10 @@ export default function AtencionSelection() {
       </div>
 
       {/* Content area */}
-      <div className="bg-white/70 backdrop-blur-xl rounded-[40px] p-8 md:p-12 shadow-2xl shadow-blue-900/5 border border-white relative overflow-hidden">
+      <div className="bg-white/70 backdrop-blur-xl rounded-[32px] p-6 md:p-8 shadow-2xl shadow-blue-900/5 border border-white relative overflow-hidden">
         {/* Step 1: Selection */}
         {currentStep === 1 && (
-          <div className="space-y-10 animate-in fade-in zoom-in-95 duration-500">
+          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-gray-800">Seleccione la Mascota</h3>
               <p className="text-gray-500 leading-relaxed">Busque una mascota registrada o cree una nueva si es la primera vez que se atiende.</p>
@@ -261,7 +315,7 @@ export default function AtencionSelection() {
                   options={mascotas.map(m => ({
                     id: m.id,
                     label: m.nombre,
-                    sublabel: `${m.especie?.nombre || 'Especie'} - Prop: ${m.propietario?.nombre || 'N/A'}`
+                    sublabel: `${m.especie || 'Especie'} - Prop: ${m.propietario || 'N/A'}${m.hogar ? ` (${m.hogar})` : ''}`
                   }))}
                   className="w-full"
                 />
@@ -285,14 +339,14 @@ export default function AtencionSelection() {
                     {selectedMascota?.nombre}
                   </h4>
                   <p className="text-sm text-gray-500 font-medium">
-                    Propietario: <span className="text-gray-700">{selectedMascota?.propietario?.nombre} {selectedMascota?.propietario?.paterno}</span>
+                    Propietario: <span className="text-gray-700">{selectedMascota?.propietario}</span>
                   </p>
                   <div className="pt-2 flex gap-2">
                     <span className="px-3 py-1 bg-blue-100/50 text-blue-700 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                      {selectedMascota?.especie?.nombre}
+                      {selectedMascota?.especie}
                     </span>
                     <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                      {selectedMascota?.raza?.nombre}
+                      {selectedMascota?.raza}
                     </span>
                   </div>
                 </div>
@@ -314,7 +368,7 @@ export default function AtencionSelection() {
 
         {/* Step 2: Consulta Form */}
         {currentStep === 2 && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
             {/* Header Informative */}
             <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -639,14 +693,223 @@ export default function AtencionSelection() {
           </div>
         )}
 
-        {/* Step 4: Resumen y Finalizar */}
+        {/* Step 4: Añadidos */}
         {currentStep === 4 && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+            {/* Header Informative */}
+            <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-blue-100 flex items-center justify-center text-blue-500">
+                  <Dog size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Atendiendo a:</p>
+                  <h4 className="text-base font-bold text-gray-800">{selectedMascota?.nombre}</h4>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Responsable:</p>
+                <p className="text-xs font-bold text-gray-600">{user?.name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                  <Package size={24} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800">Añadidos a la Consulta</h3>
+                  <p className="text-gray-500">Seleccione los procedimientos adicionales realizados durante esta atención.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Checkboxes */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
+                addVacunacion ? 'border-emerald-400 bg-emerald-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}>
+                <input type="checkbox" checked={addVacunacion} onChange={e => setAddVacunacion(e.target.checked)} className="sr-only" />
+                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                  addVacunacion ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                }`}>
+                  {addVacunacion && <Check size={14} strokeWidth={3} />}
+                </div>
+                <div>
+                  <span className="font-bold text-gray-800 text-sm flex items-center gap-1.5"><Syringe size={14} className="text-emerald-500" /> Vacunación</span>
+                </div>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-not-allowed transition-all duration-300 border-gray-200 bg-gray-50 opacity-60`}>
+                <div className="w-6 h-6 rounded-lg border-2 border-gray-300 flex items-center justify-center"></div>
+                <div>
+                  <span className="font-bold text-gray-500 text-sm flex items-center gap-1.5">🐛 Desparasitación</span>
+                  <span className="text-[10px] text-gray-400 block">Próximamente</span>
+                </div>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-not-allowed transition-all duration-300 border-gray-200 bg-gray-50 opacity-60`}>
+                <div className="w-6 h-6 rounded-lg border-2 border-gray-300 flex items-center justify-center"></div>
+                <div>
+                  <span className="font-bold text-gray-500 text-sm flex items-center gap-1.5">💊 Receta</span>
+                  <span className="text-[10px] text-gray-400 block">Próximamente</span>
+                </div>
+              </label>
+            </div>
+
+            {/* Formulario Vacunación */}
+            {addVacunacion && (
+              <div className="bg-gradient-to-br from-emerald-50/40 to-white border border-emerald-200 rounded-[28px] p-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                <h4 className="text-sm font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-2">
+                  <Syringe size={16} /> Registro de Vacunación
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Esquema Vacuna */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Esquema de Vacuna <span className="text-pink-500">*</span></label>
+                    <select
+                      value={vacunaData.esquema_vacuna_id}
+                      onChange={e => setVacunaData({...vacunaData, esquema_vacuna_id: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-300"
+                    >
+                      <option value="">Seleccione un esquema...</option>
+                      {esquemasVacunas.map((ev: any) => (
+                        <option key={ev.id} value={ev.id}>{ev.nombre} - {ev.enfermedad || 'General'}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Medicamento */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Medicamento (Vacuna) <span className="text-pink-500">*</span></label>
+                    <select
+                      value={vacunaData.medicamento_id}
+                      onChange={e => setVacunaData({...vacunaData, medicamento_id: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-300"
+                    >
+                      <option value="">Seleccione un medicamento...</option>
+                      {medicamentos.map((m: any) => (
+                        <option key={m.id} value={m.id}>{m.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Dosis */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Dosis <span className="text-pink-500">*</span></label>
+                    <input
+                      type="text"
+                      value={vacunaData.dosis}
+                      onChange={e => setVacunaData({...vacunaData, dosis: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      placeholder="Ej: 1 ml"
+                    />
+                  </div>
+
+                  {/* Cantidad */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Cantidad <span className="text-pink-500">*</span></label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={vacunaData.cantidad}
+                      onChange={e => setVacunaData({...vacunaData, cantidad: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      placeholder="1"
+                    />
+                  </div>
+
+                  {/* Lote */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Lote <span className="text-pink-500">*</span></label>
+                    <input
+                      type="text"
+                      value={vacunaData.lote}
+                      onChange={e => setVacunaData({...vacunaData, lote: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      placeholder="Ej: LOT-2026-001"
+                    />
+                  </div>
+
+                  {/* Fabricante */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Fabricante</label>
+                    <input
+                      type="text"
+                      value={vacunaData.fabricante}
+                      onChange={e => setVacunaData({...vacunaData, fabricante: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      placeholder="Ej: Laboratorio XYZ"
+                    />
+                  </div>
+
+                  {/* Fecha Aplicación */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Fecha de Aplicación <span className="text-pink-500">*</span></label>
+                    <input
+                      type="date"
+                      value={vacunaData.fecha_aplicacion}
+                      onChange={e => setVacunaData({...vacunaData, fecha_aplicacion: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+
+                  {/* Fecha Próxima */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Fecha Próxima Dosis</label>
+                    <input
+                      type="date"
+                      value={vacunaData.fecha_proxima}
+                      onChange={e => setVacunaData({...vacunaData, fecha_proxima: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+
+                  {/* Observaciones */}
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Observaciones</label>
+                    <textarea
+                      rows={2}
+                      value={vacunaData.observaciones}
+                      onChange={e => setVacunaData({...vacunaData, observaciones: e.target.value})}
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
+                      placeholder="Observaciones sobre la vacunación..."
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-8 flex justify-between border-t border-gray-100">
+              <button 
+                onClick={handlePrevStep}
+                className="px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center gap-2 hover:-translate-x-1"
+              >
+                <ChevronLeft size={20} strokeWidth={3} />
+                Atrás
+              </button>
+              <button 
+                onClick={handleNextStep}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3 hover:-translate-y-1"
+              >
+                Siguiente
+                <ChevronRight size={20} strokeWidth={3} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Resumen y Finalizar */}
+        {currentStep === 5 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
              <div className="space-y-4 text-center">
               <div className="inline-flex p-3 bg-green-100 text-green-600 rounded-2xl mb-2">
                 <Check size={32} strokeWidth={3} />
               </div>
-              <h3 className="text-3xl font-black text-gray-800">Resumen de Atención</h3>
+              <h3 className="text-2xl font-black text-gray-800">Resumen de Atención</h3>
               <p className="text-gray-500 leading-relaxed max-w-xl mx-auto">
                 Revise la información antes de guardarla permanentemente en el historial clínico de {selectedMascota?.nombre}.
               </p>
@@ -662,7 +925,7 @@ export default function AtencionSelection() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-gray-800">{selectedMascota?.nombre}</p>
-                    <p className="text-xs text-gray-500">{selectedMascota?.especie?.nombre} • {selectedMascota?.raza?.nombre}</p>
+                    <p className="text-xs text-gray-500">{selectedMascota?.especie} • {selectedMascota?.raza}</p>
                   </div>
                 </div>
               </div>
@@ -751,6 +1014,33 @@ export default function AtencionSelection() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Bloque Vacunación Resumen */}
+              {addVacunacion && (
+                <div className="md:col-span-2 bg-emerald-50/50 border border-emerald-100 rounded-[28px] p-6">
+                  <h4 className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Syringe size={14} /> Vacunación
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block">Esquema</span>
+                      <span className="font-medium text-gray-700">{esquemasVacunas.find(e => e.id === vacunaData.esquema_vacuna_id)?.nombre || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block">Medicamento</span>
+                      <span className="font-medium text-gray-700">{medicamentos.find(m => m.id === vacunaData.medicamento_id)?.nombre || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block">Dosis</span>
+                      <span className="font-medium text-gray-700">{vacunaData.dosis}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block">Lote</span>
+                      <span className="font-medium text-gray-700">{vacunaData.lote}</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

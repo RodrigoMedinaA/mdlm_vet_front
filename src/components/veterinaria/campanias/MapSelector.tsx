@@ -1,25 +1,43 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useState, useEffect } from 'react';
 
 // Fix Leaflet icon issue in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-interface MapSelectorProps {
-  onLocationSelect: (address: string) => void;
-  initialAddress?: string;
+if (typeof window !== 'undefined') {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  });
 }
 
-export default function MapSelector({ onLocationSelect, initialAddress }: MapSelectorProps) {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+// Add this component to fix the "broken tiles" issue
+function FixMapResize() {
+  const map = useMap();
+  useEffect(() => {
+    // This forces the map to recalculate its dimensions after initial load
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+  }, [map]);
+  return null;
+}
+
+interface MapSelectorProps {
+  onLocationSelect: (address: string, lat: number, lng: number) => void;
+  initialAddress?: string;
+  initialLat?: number;
+  initialLng?: number;
+}
+
+export default function MapSelector({ onLocationSelect, initialAddress, initialLat, initialLng }: MapSelectorProps) {
+  const [position, setPosition] = useState<[number, number] | null>(
+    initialLat && initialLng ? [initialLat, initialLng] : null
+  );
   const [address, setAddress] = useState(initialAddress || '');
   const [isSearching, setIsSearching] = useState(false);
 
@@ -32,7 +50,7 @@ export default function MapSelector({ onLocationSelect, initialAddress }: MapSel
       const data = await response.json();
       if (data && data.display_name) {
         setAddress(data.display_name);
-        onLocationSelect(data.display_name);
+        onLocationSelect(data.display_name, lat, lng);
       }
     } catch (error) {
       console.error('Error fetching address:', error);
@@ -50,7 +68,7 @@ export default function MapSelector({ onLocationSelect, initialAddress }: MapSel
         const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
         setPosition(newPos);
         setAddress(data[0].display_name);
-        onLocationSelect(data[0].display_name);
+        onLocationSelect(data[0].display_name, newPos[0], newPos[1]);
       }
     } catch (error) {
       console.error('Error searching address:', error);
@@ -74,7 +92,10 @@ export default function MapSelector({ onLocationSelect, initialAddress }: MapSel
     if (initialAddress && initialAddress !== address && !position) {
       setAddress(initialAddress);
     }
-  }, [initialAddress]);
+    if (initialLat && initialLng && (!position || (position[0] !== initialLat || position[1] !== initialLng))) {
+      setPosition([initialLat, initialLng]);
+    }
+  }, [initialAddress, initialLat, initialLng]);
 
   return (
     <div className="space-y-3">
@@ -85,7 +106,7 @@ export default function MapSelector({ onLocationSelect, initialAddress }: MapSel
             value={address}
             onChange={(e) => {
               setAddress(e.target.value);
-              onLocationSelect(e.target.value);
+              onLocationSelect(e.target.value, position?.[0] || 0, position?.[1] || 0);
             }}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
             placeholder="Buscar dirección o haz clic en el mapa..."
@@ -111,6 +132,7 @@ export default function MapSelector({ onLocationSelect, initialAddress }: MapSel
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <FixMapResize />
           <MapEvents />
           {position && <Marker position={position} />}
         </MapContainer>

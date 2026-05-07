@@ -5,6 +5,12 @@ import { useState, useEffect } from 'react';
 import { mascotaService } from '@/utils/mascotaService';
 import { Propietario } from '@/interfaces/Mascota';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import dynamic from 'next/dynamic';
+
+const MapSelector = dynamic(() => import('@/components/veterinaria/campanias/MapSelector'), { 
+  ssr: false, 
+  loading: () => <div className="h-[300px] bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100">Cargando mapa...</div> 
+});
 
 interface PropietarioModalProps {
   onClose: () => void;
@@ -22,7 +28,10 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
     materno: '',
     email: '',
     celular: '',
-    nro_emergencia: ''
+    nro_emergencia: '',
+    vivienda_direccion: '',
+    vivienda_latitud: 0,
+    vivienda_longitud: 0
   });
 
   useEffect(() => {
@@ -53,6 +62,9 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
         nro_doc: parseInt(formData.nro_doc),
         celular: formData.celular ? parseInt(formData.celular) : null,
         nro_emergencia: formData.nro_emergencia ? parseInt(formData.nro_emergencia) : null,
+        vivienda_direccion: formData.vivienda_direccion,
+        vivienda_latitud: formData.vivienda_latitud,
+        vivienda_longitud: formData.vivienda_longitud,
       };
 
       const newOwner = await mascotaService.createPropietario(payload);
@@ -180,11 +192,11 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
             </div>
           </div>
 
-          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-2">
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-6">
              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
             </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 pb-32">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-2">
                   Celular
@@ -208,6 +220,27 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
                   className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-2">
+             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-[15px] font-bold text-gray-800">Ubicación de la Vivienda</h3>
+            </div>
+            <div className="p-6">
+              <MapSelector 
+                initialAddress={formData.vivienda_direccion}
+                initialLat={formData.vivienda_latitud}
+                initialLng={formData.vivienda_longitud}
+                onLocationSelect={(address, lat, lng) => {
+                  setFormData({
+                    ...formData,
+                    vivienda_direccion: address,
+                    vivienda_latitud: lat || 0,
+                    vivienda_longitud: lng || 0
+                  });
+                }}
+              />
             </div>
           </div>
         </div>

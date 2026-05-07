@@ -52,9 +52,9 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
         const animal = await mascotaService.getAnimalById(editId);
         setFormData({
           nombre: animal.nombre,
-          propietario_id: animal.propietario?.id || animal.propietario_id || '',
-          especie_id: animal.especie?.id || animal.especie_id || '',
-          raza_id: animal.raza?.id || animal.raza_id || '',
+          propietario_id: animal.propietario_id || '',
+          especie_id: animal.especie_id || '',
+          raza_id: animal.raza_id || '',
           sexo: animal.sexo,
           color: animal.color,
           esterilizacion: animal.esterilizacion
@@ -139,8 +139,8 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
                   onChange={(val) => setFormData({ ...formData, propietario_id: val.toString() })}
                   options={owners.map(o => ({
                     id: o.id,
-                    label: `${o.nombre} ${o.paterno}`,
-                    sublabel: `Doc: ${o.nro_doc}`
+                    label: `${o.nombre} ${o.paterno} ${o.materno || ''}`,
+                    sublabel: `Doc: ${o.nro_doc} - Dir: ${o.direccion || 'N/A'}`
                   }))}
                 />
                 <button

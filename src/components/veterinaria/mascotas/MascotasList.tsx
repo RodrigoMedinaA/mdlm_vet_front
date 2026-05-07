@@ -78,8 +78,9 @@ export default function MascotasList() {
     const search = searchTerm.toLowerCase();
     return (
       pet.nombre.toLowerCase().includes(search) ||
-      pet.especie?.nombre?.toLowerCase().includes(search) ||
-      pet.raza?.nombre?.toLowerCase().includes(search)
+      pet.especie?.toLowerCase().includes(search) ||
+      pet.raza?.toLowerCase().includes(search) ||
+      pet.propietario?.toLowerCase().includes(search)
     );
   });
 
@@ -120,7 +121,7 @@ export default function MascotasList() {
         <table className="w-full text-[13px] text-left text-gray-500">
           <thead className="text-[11px] text-gray-400 uppercase font-bold tracking-wider">
             <tr className="border-b border-gray-200/50">
-              <th scope="col" className="px-4 py-3 pb-4 w-16">Acciones</th>
+              <th scope="col" className="px-4 py-3 pb-4 w-16 text-center">Acciones</th>
               <th scope="col" className="px-4 py-3 pb-4">Mascota</th>
               <th scope="col" className="px-4 py-3 pb-4">Especie / Raza</th>
               <th scope="col" className="px-4 py-3 pb-4">Sexo</th>
@@ -179,12 +180,24 @@ export default function MascotasList() {
                     <span>{pet.nombre}</span>
                   </td>
                   <td className="px-4 py-4.5">
-                    <div className="font-medium text-gray-800">{pet.especie?.nombre || pet.especie_id || 'N/A'}</div>
-                    <div className="text-[11px] text-gray-500">{pet.raza?.nombre || pet.raza_id || 'N/A'}</div>
+                    <div className="font-medium text-gray-800">{pet.especie || 'N/A'}</div>
+                    <div className="text-[11px] text-gray-500">{pet.raza || 'N/A'} {pet.peligroso && <span className="text-red-500 ml-1 font-bold">(P)</span>}</div>
                   </td>
                   <td className="px-4 py-4.5 font-medium">{pet.sexo}</td>
                   <td className="px-4 py-4.5 font-medium">
-                    {pet.propietario ? `${pet.propietario.nombre} ${pet.propietario.paterno}` : 'N/A'}
+                    <div className="relative group/tooltip inline-block cursor-help border-b border-dotted border-gray-300">
+                      {pet.propietario || 'N/A'}
+                      
+                      {pet.hogar && (
+                        <>
+                          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 w-64 p-3 bg-gray-900 text-white text-[11px] leading-relaxed rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl z-50 pointer-events-none text-left">
+                            <div className="font-bold mb-1 border-b border-white/10 pb-1">Dirección de Vivienda</div>
+                            {pet.hogar}
+                          </div>
+                          <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all"></div>
+                        </>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4.5 text-center">
                     <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide ${

@@ -3,22 +3,20 @@ export interface Mascota {
   nombre: string;
   especie_id: string;
   raza_id: string;
-  sexo: 'Macho' | 'Hembra';
-  color: string;
+  sexo: string;
+  especie: string; // From refactored resource
+  raza: string;    // From refactored resource
+  peligroso: boolean;
   esterilizacion: boolean;
   propietario_id: string;
-  propietario?: Propietario;
-  especie?: {
-    id: string;
-    nombre: string;
-    codigo: string;
-  };
-  raza?: {
-    id: string;
-    nombre: string;
-  };
+  propietario: string; // Full name string from resource
+  propietario_celular?: string;
+  hogar: string;       // Address from resource
   alergias?: any[];
   condiciones?: any[];
+  fecha_registro: string;
+  fallecido: boolean;
+  fecha_fallecimiento?: string;
 }
 
 export interface Propietario {
@@ -26,9 +24,10 @@ export interface Propietario {
   nombre: string;
   paterno: string;
   materno?: string;
-  tipo_documento_id?: string;
+  nombre_completo?: string;
+  tipo_doc?: string;
   nro_doc: number;
   email: string;
   celular?: string;
-  nro_emergencia?: string;
+  direccion: string;
 }

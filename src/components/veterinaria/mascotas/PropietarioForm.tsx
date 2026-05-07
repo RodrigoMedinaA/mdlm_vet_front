@@ -4,6 +4,12 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { mascotaService } from '@/utils/mascotaService';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import dynamic from 'next/dynamic';
+
+const MapSelector = dynamic(() => import('@/components/veterinaria/campanias/MapSelector'), { 
+  ssr: false, 
+  loading: () => <div className="h-[300px] bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100">Cargando mapa...</div> 
+});
 
 interface PropietarioFormProps {
   onCancel: () => void;
@@ -23,7 +29,10 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
     materno: '',
     email: '',
     celular: '',
-    nro_emergencia: ''
+    nro_emergencia: '',
+    vivienda_direccion: '',
+    vivienda_latitud: 0,
+    vivienda_longitud: 0
   });
 
   useEffect(() => {
@@ -39,14 +48,17 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
       if (editId) {
         const owner = await mascotaService.getPropietarioById(editId);
         setFormData({
-          tipo_documento_id: owner.tipo_documento_id || '',
+          tipo_documento_id: owner.tipo_doc || '',
           nro_doc: owner.nro_doc?.toString() || '',
           nombre: owner.nombre || '',
           paterno: owner.paterno || '',
           materno: owner.materno || '',
           email: owner.email || '',
           celular: owner.celular?.toString() || '',
-          nro_emergencia: owner.nro_emergencia?.toString() || ''
+          nro_emergencia: owner.nro_emergencia?.toString() || '',
+          vivienda_direccion: owner.direccion || '',
+          vivienda_latitud: owner.vivienda_latitud || 0,
+          vivienda_longitud: owner.vivienda_longitud || 0
         });
       }
     } catch (err) {
@@ -184,8 +196,8 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
           </div>
         </div>
 
-        <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
-           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center cursor-pointer">
+        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
+           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -212,6 +224,27 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
+          </div>
+        </div>
+
+        <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
+           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-[15px] font-bold text-gray-800">Ubicación de la Vivienda</h3>
+          </div>
+          <div className="p-6">
+            <MapSelector 
+              initialAddress={formData.vivienda_direccion}
+              initialLat={formData.vivienda_latitud}
+              initialLng={formData.vivienda_longitud}
+              onLocationSelect={(address, lat, lng) => {
+                setFormData({
+                  ...formData,
+                  vivienda_direccion: address,
+                  vivienda_latitud: lat || 0,
+                  vivienda_longitud: lng || 0
+                });
+              }}
+            />
           </div>
         </div>
         

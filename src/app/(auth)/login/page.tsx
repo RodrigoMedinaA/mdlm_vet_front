@@ -23,7 +23,12 @@ export default function LoginPage() {
     if (success) {
       setShowWelcome(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser?.roles?.includes('propietario')) {
+          router.push('/mascotas');
+        } else {
+          router.push('/dashboard');
+        }
       }, 2500);
     }
   };

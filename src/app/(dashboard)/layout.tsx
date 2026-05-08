@@ -21,16 +21,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [hydrate]);
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'gestor'] },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'gestor', 'veterinario'] },
     { 
       name: user?.roles?.includes('propietario') ? 'Gestión de mascotas' : 'Gestión de mascotas y propietarios', 
       path: '/mascotas', 
       icon: Dog 
     },
-    { name: 'Gestión de albergue y adopciones', path: '/albergue', icon: Home, roles: ['admin', 'gestor'] },
+    { name: 'Gestión de albergue y adopciones', path: '/albergue', icon: Home, roles: ['admin', 'gestor', 'veterinario'] },
     { name: 'Gestión de personal', path: '/personal', icon: Users, roles: ['admin', 'gestor'] },
-    { name: 'Gestión de campañas', path: '/campanias', icon: Calendar, roles: ['admin', 'gestor'] },
-    { name: 'Módulo de caja y ventas', path: '/caja', icon: CreditCard, roles: ['admin', 'gestor'] },
+    { name: 'Gestión de campañas', path: '/campanias', icon: Calendar, roles: ['admin', 'gestor', 'veterinario'] },
+    { name: 'Módulo de caja y ventas', path: '/caja', icon: CreditCard, roles: ['admin', 'gestor', 'veterinario'] },
     { name: 'Mi perfil', path: '/perfil', icon: Users, roles: ['propietario'] },
   ].filter(item => !item.roles || item.roles.some(role => user?.roles?.includes(role)));
 

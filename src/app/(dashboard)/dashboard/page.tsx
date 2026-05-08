@@ -17,6 +17,8 @@ import { mascotaService } from '@/utils/mascotaService';
 import { campaniaService, Campania } from '@/utils/campaniaService';
 import { adopcionService } from '@/utils/adopcionService';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useRouter } from 'next/navigation';
 
 const mockBarData = [
   { name: 'Lun', visitas: 40 },
@@ -29,6 +31,9 @@ const mockBarData = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
+  const router = useRouter();
+
   const [stats, setStats] = useState({
     mascotasReg: 0,
     mascotasAlbergue: 0,
@@ -39,8 +44,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user?.roles?.includes('propietario')) {
+      router.replace('/mascotas');
+    } else {
+      fetchData();
+    }
+  }, [user, router]);
 
   const fetchData = async () => {
     try {

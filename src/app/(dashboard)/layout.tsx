@@ -34,9 +34,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Mi perfil', path: '/perfil', icon: Users, roles: ['propietario'] },
   ].filter(item => !item.roles || item.roles.some(role => user?.roles?.includes(role)));
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    await logout();
   };
 
   if (!mounted) return null;

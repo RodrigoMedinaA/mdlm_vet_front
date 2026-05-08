@@ -1,20 +1,17 @@
 import { create } from 'zustand';
 import api from '@/utils/api';
 import { User } from '@/interfaces/User';
-import { LoginCredentials, AuthTokenResponse } from '@/interfaces/Auth';
-
 interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  authResponse: any | null;
 
-  /** Inicia sesión con email y contraseña */
-  login: (credentials: LoginCredentials) => Promise<boolean>;
+  /** Setea el usuario y token tras el callback del SSO */
+  setAuth: (user: User, token: string) => void;
 
   /** Cierra sesión */
-  logout: () => void;
+  logout: () => Promise<void>;
 
   /** Restaura la sesión desde localStorage (al cargar la app) */
   hydrate: () => void;
@@ -25,51 +22,48 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isLoading: false,
   error: null,
-  authResponse: null,
 
-  login: async (credentials: LoginCredentials) => {
-    set({ isLoading: true, error: null, authResponse: null });
-    try {
-      const { data } = await api.post<AuthTokenResponse>('/auth/login', credentials);
-
-      // Guardar token en localStorage
-      localStorage.setItem('access_token', data.access_token);
-
-      set({
-        user: data.user,
-        token: data.access_token,
-        isLoading: false,
-        error: null,
-        authResponse: data,
-      });
-
-      return true;
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message || 'Error al iniciar sesión';
-      set({ error: message, isLoading: false });
-      return false;
-    }
+  setAuth: (user: User, token: string) => {
+    set({ user, token, error: null });
   },
 
-  logout: () => {
-    localStorage.removeItem('access_token');
-    set({ user: null, token: null, error: null });
+  logout: async () => {
+    try {
+      // Opcional: Avisar al backend de veterinaria
+      await api.post('/auth/logout').catch(() => {});
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user_info');
+      set({ user: null, token: null, error: null });
+      
+      // Redirigir al inicio o al logout central del SSO si estuviera configurado
+      window.location.href = '/';
+    }
   },
 
   hydrate: () => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token');
+      const userInfo = localStorage.getItem('user_info');
+      
       if (token) {
         set({ token });
-        // Opcionalmente obtener datos del usuario
-        api
-          .get<User>('/auth/me')
-          .then(({ data }) => set({ user: data }))
-          .catch(() => {
-            localStorage.removeItem('access_token');
-            set({ token: null });
-          });
+        if (userInfo) {
+          set({ user: JSON.parse(userInfo) });
+        } else {
+          // Si hay token pero no info, intentamos recuperar
+          api
+            .get<User>('/auth/me')
+            .then(({ data }) => {
+              set({ user: data });
+              localStorage.setItem('user_info', JSON.stringify(data));
+            })
+            .catch(() => {
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('user_info');
+              set({ token: null, user: null });
+            });
+        }
       }
     }
   },

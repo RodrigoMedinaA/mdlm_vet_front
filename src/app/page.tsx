@@ -8,6 +8,7 @@ import Button from '@/components/common/Button';
 import CampaignList from '@/components/veterinaria/CampaignList';
 import ServiceCatalog from '@/components/veterinaria/ServiceCatalog';
 import api from '@/utils/api';
+import ssoApi from '@/utils/api';
 import { Campaign, CampaignResponse } from '@/interfaces/Campaign';
 
 type RightPanel = 'dog' | 'campaigns' | 'services';
@@ -87,11 +88,17 @@ export default function Home() {
 
           {/* Botones */}
           <div className="space-y-4 flex flex-col max-w-sm">
-            <Link href="/login">
-              <Button variant="primary" fullWidth>
-                Ingresar
-              </Button>
-            </Link>
+            <Button 
+              variant="primary" 
+              fullWidth 
+              onClick={() => {
+                const ssoUrl = process.env.NEXT_PUBLIC_SSO_URL || 'http://sso.test/login';
+                const callback = encodeURIComponent(window.location.origin + '/auth/callback');
+                window.location.href = `${ssoUrl}?callback=${callback}`;
+              }}
+            >
+              Ingresar
+            </Button>
 
             <Button variant="outline" fullWidth onClick={handleToggleServices}>
               Ver catalogo de servicios

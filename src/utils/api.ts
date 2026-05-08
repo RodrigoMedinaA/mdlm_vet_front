@@ -9,6 +9,14 @@ const api = axios.create({
   },
 });
 
+export const ssoApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_SSO_URL || 'http://sso.test/login',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+});
+
 // Interceptor: adjunta el token Bearer a cada request si existe
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
@@ -26,11 +34,17 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
-      // Redirigir al login solo si no estamos ya ahí
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
+      localStorage.removeItem('user_info');
+      // Redirigir al login del SSO central
+      const callback = encodeURIComponent(window.location.origin + '/auth/callback');
+      const baseUrl = process.env.NEXT_PUBLIC_SSO_URL || 'http://sso.test/login';
+      window.location.href = `${baseUrl}?callback=${callback}`;
     }
+    
+    if (error.response?.status === 403) {
+      alert('Acceso denegado: No tienes permisos para realizar esta acción.');
+    }
+
     return Promise.reject(error);
   }
 );

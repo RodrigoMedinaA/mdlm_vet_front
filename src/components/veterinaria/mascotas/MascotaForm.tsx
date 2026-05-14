@@ -48,7 +48,7 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
     try {
       // Si es propietario, no cargamos la lista de propietarios (daría 403)
       const promises: Promise<any>[] = [];
-      
+
       if (!isOwner) {
         promises.push(mascotaService.getAllOwners());
         promises.push(mascotaService.getAllSpecies());
@@ -62,13 +62,13 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
       }
 
       const [ownersData, speciesData, razasData] = await Promise.all(promises);
-      
+
       setOwners(ownersData);
       setSpecies(speciesData);
       setRazas(razasData);
 
       if (editId) {
-        const animal = isOwner 
+        const animal = isOwner
           ? await mascotaService.getClienteMascotaById(editId)
           : await mascotaService.getAnimalById(editId);
         setFormData({
@@ -138,6 +138,10 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
         <p className="text-gray-500 font-medium">Cargando datos de la mascota...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return <div>No autenticado</div>;
   }
 
   return (
@@ -315,13 +319,13 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
       {isDeathModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsDeathModalOpen(false)} />
-          
+
           <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-8 pt-8 pb-6 text-center">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Bird size={40} className="text-gray-400" />
               </div>
-              
+
               <h3 className="text-2xl font-black text-gray-900 mb-3">Registrar Deceso</h3>
               <p className="text-gray-500 leading-relaxed mb-6">
                 ¿Está seguro que desea registrar el deceso de <span className="font-bold text-gray-800">{formData.nombre}</span>?

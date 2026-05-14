@@ -21,8 +21,10 @@ export default function AuthCallbackPage() {
       // 2. Realizar petición a GET /api/auth/me para sincronizar y obtener perfil/roles
       api.get('/auth/me')
         .then((response) => {
-          const user = response.data;
-          // 3. Guardar información del usuario
+          // Normalizar: /auth/me puede retornar array o un objeto
+          const raw = response.data;
+          const user = Array.isArray(raw) ? raw[0] : raw;
+          // 3. Guardar información del usuario (con roles y permissions)
           localStorage.setItem('user_info', JSON.stringify(user));
           setAuth(user, token);
           

@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import api from '@/utils/api';
 import { User } from '@/interfaces/User';
+
+/** Extrae el User del payload de /auth/me (puede venir como array o como objeto) */
+function normalizeUserPayload(data: unknown): User {
+  if (Array.isArray(data)) return data[0] as User;
+  return data as User;
+}
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -15,9 +21,21 @@ interface AuthState {
 
   /** Restaura la sesión desde localStorage (al cargar la app) */
   hydrate: () => void;
+
+  /** Verificar UN permiso */
+  canAccess: (permission: string) => boolean;
+
+  /** Verificar UN rol */
+  hasRole: (role: string) => boolean;
+
+  /** Verificar TODOS los permisos (AND) */
+  canAccessMultiple: (permissions: string[]) => boolean;
+
+  /** Verificar AL MENOS UN permiso (OR) */
+  canAccessAny: (permissions: string[]) => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
@@ -30,12 +48,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       // Opcional: Avisar al backend de veterinaria
-      await api.post('/auth/logout').catch(() => {});
+      await api.post('/auth/logout').catch(() => { });
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user_info');
       set({ user: null, token: null, error: null });
-      
+
       // Redirigir al inicio o al logout central del SSO si estuviera configurado
       window.location.href = '/';
     }
@@ -44,27 +62,58 @@ export const useAuthStore = create<AuthState>((set) => ({
   hydrate: () => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token');
-      const userInfo = localStorage.getItem('user_info');
-      
+
       if (token) {
-        set({ token });
-        if (userInfo) {
-          set({ user: JSON.parse(userInfo) });
-        } else {
-          // Si hay token pero no info, intentamos recuperar
-          api
-            .get<User>('/auth/me')
-            .then(({ data }) => {
-              set({ user: data });
-              localStorage.setItem('user_info', JSON.stringify(data));
-            })
-            .catch(() => {
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('user_info');
-              set({ token: null, user: null });
-            });
+        set({ token, isLoading: true });
+
+        // Hidratar temporalmente con lo que haya en localStorage para evitar
+        // un parpadeo, pero SIEMPRE revalidar contra /auth/me
+        const cached = localStorage.getItem('user_info');
+        if (cached) {
+          try {
+            set({ user: JSON.parse(cached) });
+          } catch { /* cache corrupta, se ignora */ }
         }
+
+        // Revalidar roles & permissions desde el backend (fuente de verdad)
+        api
+          .get('/auth/me')
+          .then(({ data }) => {
+            const user = normalizeUserPayload(data);
+            localStorage.setItem('user_info', JSON.stringify(user));
+            set({ user, isLoading: false });
+          })
+          .catch(() => {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            set({ token: null, user: null, isLoading: false });
+          });
       }
     }
   },
-}));
+  // ✅ Verificar UN permiso
+  canAccess: (permission: string) => {
+    const { user } = get();
+    return user?.permissions?.includes(permission) ?? false;
+  },
+
+  // ✅ Verificar UN rol
+  hasRole: (role: string) => {
+    const { user } = get();
+    return user?.roles?.includes(role) ?? false;
+  },
+
+  // ✅ Verificar TODOS los permisos (AND)
+  canAccessMultiple: (permissions: string[]) => {
+    const { user } = get();
+    return permissions.every(p => user?.permissions?.includes(p) ?? false);
+  },
+
+  // ✅ Verificar AL MENOS UN permiso (OR)
+  canAccessAny: (permissions: string[]) => {
+    const { user } = get();
+    return permissions.some(p => user?.permissions?.includes(p) ?? false);
+  },
+}
+)
+);

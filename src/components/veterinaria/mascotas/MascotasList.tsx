@@ -14,8 +14,9 @@ export default function MascotasList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, canAccess } = useAuthStore();
   const isOwner = user?.roles?.includes('propietario');
+  const canCreatePet = canAccess('crear mascotas');
   
   const [pets, setPets] = useState<Mascota[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +115,16 @@ export default function MascotasList() {
               className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm placeholder:text-gray-400"
             />
           </div>
+          {canCreatePet && (
+            <button
+              id="btn-crear-mascota"
+              onClick={handleCreateClick}
+              className="flex items-center space-x-2 bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap"
+            >
+              <Plus size={18} />
+              <span>Registrar Mascota</span>
+            </button>
+          )}
         </div>
       </div>
       

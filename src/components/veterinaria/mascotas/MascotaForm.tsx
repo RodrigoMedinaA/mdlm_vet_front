@@ -100,7 +100,20 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
         pet = await mascotaService.createAnimal(formData);
         alert('Mascota creada con éxito');
       }
-      if (onSuccess) onSuccess(pet);
+
+      // Enriquecemos el objeto 'pet' para que otras vistas tengan los nombres sin recargar
+      const owner = owners.find(o => o.id === formData.propietario_id);
+      const specie = species.find(s => s.id === formData.especie_id);
+      const raza = razas.find(r => r.id === formData.raza_id);
+      
+      const enrichedPet = {
+        ...pet,
+        propietario: owner ? `${owner.nombre} ${owner.paterno} ${owner.materno || ''}`.trim() : pet.propietario,
+        especie: specie ? specie.nombre : pet.especie,
+        raza: raza ? raza.nombre : pet.raza,
+      };
+
+      if (onSuccess) onSuccess(enrichedPet);
       else onCancel();
     } catch (err) {
       console.error('Error saving animal:', err);

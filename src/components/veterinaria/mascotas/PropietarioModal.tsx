@@ -259,8 +259,8 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
             disabled={loading}
             className="bg-[#2ecc71] hover:bg-[#27ae60] text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all duration-300 text-sm flex items-center gap-2"
           >
-            {loading && <Loader2 className="animate-spin" size={16} />}
-            Guardar Propietario
+            {loading ? <Loader2 className="animate-spin" size={16} /> : null}
+            <span>Guardar Propietario</span>
           </button>
         </div>
         

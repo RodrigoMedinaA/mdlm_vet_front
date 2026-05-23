@@ -298,7 +298,7 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
                 disabled={loading}
                 className="bg-[#2ecc71] hover:bg-[#27ae60] text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {loading && <Loader2 className="animate-spin" size={18} />}
+                {loading ? <Loader2 className="animate-spin" size={18} /> : null}
                 {editId ? 'Guardar Cambios' : 'Crear Mascota'}
               </button>
               <button

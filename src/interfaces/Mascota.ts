@@ -4,6 +4,7 @@ export interface Mascota {
   especie_id: string;
   raza_id: string;
   sexo: string;
+  color: string;
   especie: string; // From refactored resource
   raza: string;    // From refactored resource
   peligroso: boolean;

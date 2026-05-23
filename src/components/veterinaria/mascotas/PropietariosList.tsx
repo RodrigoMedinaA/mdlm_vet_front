@@ -6,11 +6,13 @@ import PropietarioForm from './PropietarioForm';
 import { mascotaService } from '@/utils/mascotaService';
 import { Propietario } from '@/interfaces/Mascota';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function PropietariosList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   const [owners, setOwners] = useState<Propietario[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,8 +23,10 @@ export default function PropietariosList() {
   const isCreating = searchParams.get('new_owner') === 'true';
 
   useEffect(() => {
-    fetchOwners();
-  }, []);
+    if (user) {
+      fetchOwners();
+    }
+  }, [user]);
 
   const fetchOwners = async () => {
     try {

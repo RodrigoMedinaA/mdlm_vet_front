@@ -36,8 +36,8 @@ export default function AtencionSelection() {
   const [catalogoCondiciones, setCatalogoCondiciones] = useState<any[]>([]);
   const [selectedAlergiaId, setSelectedAlergiaId] = useState('');
   const [selectedCondicionId, setSelectedCondicionId] = useState('');
-  const [alergiasList, setAlergiasList] = useState<{alergia_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
-  const [condicionesList, setCondicionesList] = useState<{condicion_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string}[]>([]);
+  const [alergiasList, setAlergiasList] = useState<{ alergia_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string }[]>([]);
+  const [condicionesList, setCondicionesList] = useState<{ condicion_id: string; nombre: string; observaciones: string; severidad: string; estado_clinico: string }[]>([]);
 
   // Step 4: Añadidos (Vacunación, Desparasitación, Receta)
   const [addVacunacion, setAddVacunacion] = useState(false);
@@ -60,8 +60,10 @@ export default function AtencionSelection() {
   const selectedMascota = mascotas.find(m => m.id === selectedMascotaId);
 
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    if (user) {
+      fetchInitialData();
+    }
+  }, [user]);
 
   const fetchInitialData = async () => {
     try {
@@ -178,14 +180,14 @@ export default function AtencionSelection() {
 
   const handleSubmit = async () => {
     if (!user || !selectedMascotaId) return;
-    
+
     setSubmitting(true);
     try {
       // 1. Crear la consulta
       const payload = {
         ...consultaData,
         animal_id: selectedMascotaId,
-        personal_id: user.id, 
+        personal_id: user.id,
         peso_registrado: parseFloat(consultaData.peso_registrado)
       };
       const consultaCreada = await mascotaService.createConsulta(payload);
@@ -263,27 +265,25 @@ export default function AtencionSelection() {
           {steps.map((step, idx) => (
             <div key={step.number} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center relative">
-                <div 
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 border-2 ${
-                    currentStep >= step.number 
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' 
+                <div
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 border-2 ${currentStep >= step.number
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
                       : 'bg-white border-gray-200 text-gray-400'
-                  } ${currentStep === step.number ? 'scale-110' : ''}`}
+                    } ${currentStep === step.number ? 'scale-110' : ''}`}
                 >
                   {currentStep > step.number ? <Check size={20} strokeWidth={3} /> : step.icon}
                 </div>
-                <span 
-                  className={`absolute -bottom-8 whitespace-nowrap text-[11px] font-bold uppercase tracking-widest transition-colors duration-500 ${
-                    currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'
-                  }`}
+                <span
+                  className={`absolute -bottom-8 whitespace-nowrap text-[11px] font-bold uppercase tracking-widest transition-colors duration-500 ${currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'
+                    }`}
                 >
                   {step.title}
                 </span>
               </div>
               {idx < steps.length - 1 && (
                 <div className="flex-1 h-[3px] mx-4 bg-gray-100 rounded-full overflow-hidden relative">
-                  <div 
-                    className="absolute top-0 left-0 h-full bg-blue-600 transition-all duration-700 ease-in-out" 
+                  <div
+                    className="absolute top-0 left-0 h-full bg-blue-600 transition-all duration-700 ease-in-out"
                     style={{ width: currentStep > step.number ? '100%' : '0%' }}
                   />
                 </div>
@@ -308,7 +308,7 @@ export default function AtencionSelection() {
                 <label className="block text-[11px] font-bold text-gray-400 mb-3 ml-1 uppercase tracking-widest">
                   Buscar Mascota
                 </label>
-                <SearchableSelect 
+                <SearchableSelect
                   placeholder="Escriba el nombre de la mascota o el dueño..."
                   value={selectedMascotaId}
                   onChange={(val) => setSelectedMascotaId(val.toString())}
@@ -320,7 +320,7 @@ export default function AtencionSelection() {
                   className="w-full"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => setIsMascotaModalOpen(true)}
                 className="h-[52px] w-[52px] bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 text-blue-600 transition-all flex items-center justify-center shrink-0 shadow-sm hover:shadow-md active:scale-95"
                 title="Registrar nueva mascota"
@@ -354,7 +354,7 @@ export default function AtencionSelection() {
             )}
 
             <div className="pt-6 flex justify-end">
-              <button 
+              <button
                 onClick={handleNextStep}
                 disabled={!selectedMascotaId}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center gap-3 text-lg"
@@ -397,17 +397,17 @@ export default function AtencionSelection() {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="md:col-span-2">
                 <label className="block text-[13px] font-bold text-gray-700 mb-2 ml-1 uppercase tracking-wider">
                   Motivo de la consulta <span className="text-pink-500">*</span>
                 </label>
-                <textarea 
+                <textarea
                   required
                   rows={3}
                   value={consultaData.motivo}
-                  onChange={(e) => setConsultaData({...consultaData, motivo: e.target.value})}
+                  onChange={(e) => setConsultaData({ ...consultaData, motivo: e.target.value })}
                   className="w-full px-5 py-4 bg-gray-50/50 border border-gray-200 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-sm resize-none"
                   placeholder="Describa brevemente el motivo de la atención..."
                 />
@@ -418,12 +418,12 @@ export default function AtencionSelection() {
                   Peso registrado (kg) <span className="text-pink-500">*</span>
                 </label>
                 <div className="relative">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="0.01"
                     required
                     value={consultaData.peso_registrado}
-                    onChange={(e) => setConsultaData({...consultaData, peso_registrado: e.target.value})}
+                    onChange={(e) => setConsultaData({ ...consultaData, peso_registrado: e.target.value })}
                     className="w-full px-5 py-4 bg-gray-50/50 border border-gray-200 rounded-[20px] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-sm"
                     placeholder="0.00"
                   />
@@ -438,8 +438,8 @@ export default function AtencionSelection() {
                   Cita Relacionada (Opcional)
                 </label>
                 <div className="relative opacity-60">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     disabled
                     className="w-full px-5 py-4 bg-gray-100 border border-gray-200 rounded-[20px] text-sm cursor-not-allowed"
                     placeholder="Próximamente..."
@@ -452,11 +452,11 @@ export default function AtencionSelection() {
                 <label className="block text-[13px] font-bold text-gray-700 mb-2 ml-1 uppercase tracking-wider">
                   Diagnóstico <span className="text-pink-500">*</span>
                 </label>
-                <textarea 
+                <textarea
                   required
                   rows={3}
                   value={consultaData.diagnostico}
-                  onChange={(e) => setConsultaData({...consultaData, diagnostico: e.target.value})}
+                  onChange={(e) => setConsultaData({ ...consultaData, diagnostico: e.target.value })}
                   className="w-full px-5 py-4 bg-gray-50/50 border border-gray-200 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-sm resize-none"
                   placeholder="Ingrese el diagnóstico clínico..."
                 />
@@ -466,10 +466,10 @@ export default function AtencionSelection() {
                 <label className="block text-[13px] font-bold text-gray-700 mb-2 ml-1 uppercase tracking-wider">
                   Tratamiento
                 </label>
-                <textarea 
+                <textarea
                   rows={4}
                   value={consultaData.tratamiento}
-                  onChange={(e) => setConsultaData({...consultaData, tratamiento: e.target.value})}
+                  onChange={(e) => setConsultaData({ ...consultaData, tratamiento: e.target.value })}
                   className="w-full px-5 py-4 bg-gray-50/50 border border-gray-200 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-sm resize-none"
                   placeholder="Medicamentos, dosis, frecuencia..."
                 />
@@ -479,10 +479,10 @@ export default function AtencionSelection() {
                 <label className="block text-[13px] font-bold text-gray-700 mb-2 ml-1 uppercase tracking-wider">
                   Observaciones adicionales
                 </label>
-                <textarea 
+                <textarea
                   rows={4}
                   value={consultaData.observaciones}
-                  onChange={(e) => setConsultaData({...consultaData, observaciones: e.target.value})}
+                  onChange={(e) => setConsultaData({ ...consultaData, observaciones: e.target.value })}
                   className="w-full px-5 py-4 bg-gray-50/50 border border-gray-200 rounded-[24px] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-sm resize-none"
                   placeholder="Notas adicionales sobre la atención..."
                 />
@@ -490,14 +490,14 @@ export default function AtencionSelection() {
             </div>
 
             <div className="pt-8 flex justify-between border-t border-gray-100">
-              <button 
+              <button
                 onClick={handlePrevStep}
                 className="px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center gap-2 hover:-translate-x-1"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
                 Atrás
               </button>
-              <button 
+              <button
                 onClick={handleNextStep}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3 hover:-translate-y-1"
               >
@@ -675,14 +675,14 @@ export default function AtencionSelection() {
             </div>
 
             <div className="pt-8 flex justify-between border-t border-gray-100">
-              <button 
+              <button
                 onClick={handlePrevStep}
                 className="px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center gap-2 hover:-translate-x-1"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
                 Atrás
               </button>
-              <button 
+              <button
                 onClick={handleNextStep}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3 hover:-translate-y-1"
               >
@@ -727,13 +727,11 @@ export default function AtencionSelection() {
 
             {/* Checkboxes */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-                addVacunacion ? 'border-emerald-400 bg-emerald-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}>
-                <input type="checkbox" checked={addVacunacion} onChange={e => setAddVacunacion(e.target.checked)} className="sr-only" />
-                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                  addVacunacion ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+              <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${addVacunacion ? 'border-emerald-400 bg-emerald-50/50 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}>
+                <input type="checkbox" checked={addVacunacion} onChange={e => setAddVacunacion(e.target.checked)} className="sr-only" />
+                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${addVacunacion ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                  }`}>
                   {addVacunacion && <Check size={14} strokeWidth={3} />}
                 </div>
                 <div>
@@ -771,7 +769,7 @@ export default function AtencionSelection() {
                     <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Esquema de Vacuna <span className="text-pink-500">*</span></label>
                     <select
                       value={vacunaData.esquema_vacuna_id}
-                      onChange={e => setVacunaData({...vacunaData, esquema_vacuna_id: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, esquema_vacuna_id: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-300"
                     >
                       <option value="">Seleccione un esquema...</option>
@@ -786,7 +784,7 @@ export default function AtencionSelection() {
                     <label className="block text-[11px] font-bold text-gray-600 mb-2 uppercase tracking-wider">Medicamento (Vacuna) <span className="text-pink-500">*</span></label>
                     <select
                       value={vacunaData.medicamento_id}
-                      onChange={e => setVacunaData({...vacunaData, medicamento_id: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, medicamento_id: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-300"
                     >
                       <option value="">Seleccione un medicamento...</option>
@@ -802,7 +800,7 @@ export default function AtencionSelection() {
                     <input
                       type="text"
                       value={vacunaData.dosis}
-                      onChange={e => setVacunaData({...vacunaData, dosis: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, dosis: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                       placeholder="Ej: 1 ml"
                     />
@@ -816,7 +814,7 @@ export default function AtencionSelection() {
                       step="0.01"
                       min="0.01"
                       value={vacunaData.cantidad}
-                      onChange={e => setVacunaData({...vacunaData, cantidad: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, cantidad: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                       placeholder="1"
                     />
@@ -828,7 +826,7 @@ export default function AtencionSelection() {
                     <input
                       type="text"
                       value={vacunaData.lote}
-                      onChange={e => setVacunaData({...vacunaData, lote: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, lote: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                       placeholder="Ej: LOT-2026-001"
                     />
@@ -840,7 +838,7 @@ export default function AtencionSelection() {
                     <input
                       type="text"
                       value={vacunaData.fabricante}
-                      onChange={e => setVacunaData({...vacunaData, fabricante: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, fabricante: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                       placeholder="Ej: Laboratorio XYZ"
                     />
@@ -852,7 +850,7 @@ export default function AtencionSelection() {
                     <input
                       type="date"
                       value={vacunaData.fecha_aplicacion}
-                      onChange={e => setVacunaData({...vacunaData, fecha_aplicacion: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, fecha_aplicacion: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
@@ -863,7 +861,7 @@ export default function AtencionSelection() {
                     <input
                       type="date"
                       value={vacunaData.fecha_proxima}
-                      onChange={e => setVacunaData({...vacunaData, fecha_proxima: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, fecha_proxima: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
@@ -874,7 +872,7 @@ export default function AtencionSelection() {
                     <textarea
                       rows={2}
                       value={vacunaData.observaciones}
-                      onChange={e => setVacunaData({...vacunaData, observaciones: e.target.value})}
+                      onChange={e => setVacunaData({ ...vacunaData, observaciones: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
                       placeholder="Observaciones sobre la vacunación..."
                     />
@@ -884,14 +882,14 @@ export default function AtencionSelection() {
             )}
 
             <div className="pt-8 flex justify-between border-t border-gray-100">
-              <button 
+              <button
                 onClick={handlePrevStep}
                 className="px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center gap-2 hover:-translate-x-1"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
                 Atrás
               </button>
-              <button 
+              <button
                 onClick={handleNextStep}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3 hover:-translate-y-1"
               >
@@ -905,7 +903,7 @@ export default function AtencionSelection() {
         {/* Step 5: Resumen y Finalizar */}
         {currentStep === 5 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-             <div className="space-y-4 text-center">
+            <div className="space-y-4 text-center">
               <div className="inline-flex p-3 bg-green-100 text-green-600 rounded-2xl mb-2">
                 <Check size={32} strokeWidth={3} />
               </div>
@@ -934,7 +932,7 @@ export default function AtencionSelection() {
               <div className="bg-gray-50/50 rounded-[28px] p-6 border border-gray-100">
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Datos Clínicos</h4>
                 <div className="flex items-center gap-6">
-                   <div className="flex flex-col">
+                  <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-gray-400 uppercase">Peso</span>
                     <span className="text-lg font-black text-blue-600">{consultaData.peso_registrado} kg</span>
                   </div>
@@ -951,7 +949,7 @@ export default function AtencionSelection() {
                   <h4 className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-2">Motivo de Consulta</h4>
                   <p className="text-gray-700 text-sm italic">"{consultaData.motivo}"</p>
                 </div>
-                
+
                 <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm">
                   <h4 className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-2">Diagnóstico</h4>
                   <p className="text-gray-700 text-sm font-medium">{consultaData.diagnostico}</p>
@@ -1046,7 +1044,7 @@ export default function AtencionSelection() {
             </div>
 
             <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
-              <button 
+              <button
                 onClick={handlePrevStep}
                 disabled={submitting}
                 className="w-full sm:w-auto px-8 py-4 rounded-[20px] font-bold text-gray-500 hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
@@ -1054,16 +1052,16 @@ export default function AtencionSelection() {
                 <ChevronLeft size={20} strokeWidth={3} />
                 Corregir datos
               </button>
-              
+
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => router.push('/dashboard')}
                   disabled={submitting}
                   className="w-full sm:w-auto px-8 py-4 rounded-[20px] font-bold text-pink-500 hover:bg-pink-50 transition-all"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleSubmit}
                   disabled={submitting}
                   className="w-full sm:w-auto bg-[#2ecc71] hover:bg-[#27ae60] text-white px-10 py-4 rounded-[20px] font-bold shadow-xl shadow-[#2ecc71]/20 transition-all flex items-center justify-center gap-3 hover:-translate-y-1 disabled:opacity-50"
@@ -1094,8 +1092,8 @@ export default function AtencionSelection() {
       </div>
 
       {isMascotaModalOpen && (
-        <MascotaModal 
-          onClose={() => setIsMascotaModalOpen(false)} 
+        <MascotaModal
+          onClose={() => setIsMascotaModalOpen(false)}
           onSuccess={handleMascotaSuccess}
         />
       )}

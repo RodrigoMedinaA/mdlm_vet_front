@@ -112,7 +112,7 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
       {/* Form Container */}
       <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
         
-        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
+        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-[15px] font-bold text-gray-800">Información del Propietario</h3>
           </div>
@@ -196,12 +196,12 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
           </div>
         </div>
 
-        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
-           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div>
+            <div>
               <label className="block text-[13px] font-bold text-gray-700 mb-2">
                 Celular
               </label>
@@ -227,8 +227,8 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
           </div>
         </div>
 
-        <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
-           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-[15px] font-bold text-gray-800">Ubicación de la Vivienda</h3>
           </div>
           <div className="p-6">

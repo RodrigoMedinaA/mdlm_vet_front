@@ -39,7 +39,7 @@ export default function AlbergueList() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Mascotas en Albergue</h2>
-            <p className="text-sm text-gray-500 mt-1">Gestiona las mascotas del Albergue Municipal listas para adopción</p>
+            <p className="text-sm text-gray-500 mt-1">Gestiona las mascotas del albergue listas para adopción</p>
           </div>
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -113,8 +113,8 @@ export default function AlbergueList() {
                       <span>{pet.nombre}</span>
                     </td>
                     <td className="px-4 py-4.5">
-                      <div className="font-medium text-gray-800">{pet.especie?.nombre || pet.especie_id || 'N/A'}</div>
-                      <div className="text-[11px] text-gray-500">{pet.raza?.nombre || pet.raza_id || 'N/A'}</div>
+                      <div className="font-medium text-gray-800">{pet.especie || 'N/A'}</div>
+                      <div className="text-[11px] text-gray-500">{pet.raza || 'N/A'}</div>
                     </td>
                     <td className="px-4 py-4.5 font-medium">{pet.sexo}</td>
                     <td className="px-4 py-4.5 text-center">

@@ -71,7 +71,7 @@ export default function Home() {
           {/* Logo de la Municipalidad */}
           <div className="flex items-center gap-4">
             <Image
-              src="/logo_munimolina.png"
+              src="/huellitas.png"
               alt="Municipalidad de La Molina"
               width={260}
               height={90}
@@ -83,7 +83,7 @@ export default function Home() {
           {/* Título */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
             <span className="text-white block">Veterinaria</span>
-            <span className="text-[#fec107] block">Municipal</span>
+            {/* <span className="text-[#fec107] block">Municipal</span> */}
           </h1>
 
           {/* Botones */}

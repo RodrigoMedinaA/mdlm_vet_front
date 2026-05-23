@@ -100,7 +100,7 @@ export default function AdopcionFormModal({ petId, petName, onClose, onSuccess }
             <p className="text-sm text-pink-800 font-medium italic">Estás registrando la adopción de: <span className="font-extrabold uppercase not-italic ml-1">{petName}</span></p>
           </div>
 
-          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden">
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Detalles de la Adopción</h3>
             </div>

@@ -80,7 +80,7 @@ export default function SearchableSelect({
       </div>
 
       {isOpen && (
-        <div className="absolute z-[60] w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute z-[9999] w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           <div className="p-2 border-b border-gray-50 bg-gray-50/50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />

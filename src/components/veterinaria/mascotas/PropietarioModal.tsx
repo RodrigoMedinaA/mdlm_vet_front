@@ -108,7 +108,7 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
 
         {/* Body (Scrollable) */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
-          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-6">
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm mb-6">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Información del Propietario</h3>
             </div>
@@ -192,7 +192,7 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
             </div>
           </div>
 
-          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-6">
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm mb-6">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
             </div>
@@ -223,7 +223,7 @@ export default function PropietarioModal({ onClose, onSuccess }: PropietarioModa
             </div>
           </div>
 
-          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden mb-2">
+          <div className="border border-gray-100 rounded-2xl bg-white shadow-sm mb-2">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Ubicación de la Vivienda</h3>
             </div>

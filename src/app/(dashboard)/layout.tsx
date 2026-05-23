@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   Users, Home, Shield, Calendar, CreditCard, Search, Bell, LayoutDashboard,
-  LogOut, Dog
+  LogOut, Dog, Package
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [hydrate]);
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'gestor', 'veterinario'] },
+    { name: 'Tablero', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'gestor', 'veterinario'] },
     { 
       name: user?.roles?.includes('propietario') ? 'Gestión de mascotas' : 'Gestión de mascotas y propietarios', 
       path: '/mascotas', 
@@ -31,6 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Gestión de personal', path: '/personal', icon: Users, roles: ['admin', 'gestor'] },
     { name: 'Gestión de campañas', path: '/campanias', icon: Calendar, roles: ['admin', 'gestor', 'veterinario'] },
     { name: 'Módulo de caja y ventas', path: '/caja', icon: CreditCard, roles: ['admin', 'gestor', 'veterinario'] },
+    { name: 'Gestión de inventario', path: '/inventario', icon: Package, roles: ['admin', 'gestor', 'veterinario'] },
     { name: 'Mi perfil', path: '/perfil', icon: Users, roles: ['propietario'] },
   ].filter(item => !item.roles || item.roles.some(role => user?.roles?.includes(role)));
 
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className="w-[280px] bg-white/50 backdrop-blur-xl border-r border-white/50 flex flex-col my-4 ml-4 rounded-[32px] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] overflow-hidden relative z-10">
         <div className="p-8 flex items-center justify-center border-b border-white/40">
-          <Image src="/logo_munimolina.png" alt="Logo" width={160} height={60} className="w-auto h-12 object-contain" />
+          <Image src="/huellitas.png" alt="Logo" width={160} height={60} className="w-auto h-12 object-contain" />
         </div>
 
         <nav className="flex-1 px-5 py-8 space-y-2.5 overflow-y-auto custom-scrollbar">
@@ -90,11 +91,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-28 px-10 flex items-center justify-between relative z-10 shrink-0">
           <div>
             <h1 className="text-[#015f33] font-semibold text-[15px] flex items-center space-x-2">
-              <span>Welcome back, {user?.name?.split(' ')[0] || 'Usuario'}</span>
+              <span>Bienvenido de vuelta, {user?.name?.split(' ')[0] || 'Usuario'}</span>
               <span className="text-xl animate-bounce">👋</span>
             </h1>
             <h2 className="text-[36px] font-extrabold text-gray-800 tracking-tight mt-0.5">
-              {menuItems.find(i => pathname === i.path || pathname.startsWith(i.path + '/'))?.name || 'Dashboard'}
+              {menuItems.find(i => pathname === i.path || pathname.startsWith(i.path + '/'))?.name || 'Tablero'}
             </h2>
           </div>
 

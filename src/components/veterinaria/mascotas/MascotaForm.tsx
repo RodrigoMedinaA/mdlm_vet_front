@@ -175,7 +175,7 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
         {/* Form Container */}
         <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
 
-          <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 overflow-hidden shadow-sm">
+          <div className="mb-8 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-[15px] font-bold text-gray-800">Información de la Mascota</h3>
             </div>
@@ -276,17 +276,25 @@ export default function MascotaForm({ onCancel, onSuccess, editId }: MascotaForm
                 />
               </div>
 
-              <SearchableSelect
-                label="Esterilización"
-                required
-                disabled={isOwner}
-                value={formData.esterilizacion ? '1' : '0'}
-                onChange={(val) => setFormData({ ...formData, esterilizacion: val === '1' })}
-                options={[
-                  { id: '1', label: 'Sí' },
-                  { id: '0', label: 'No' }
-                ]}
-              />
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-3">
+                  Esterilización
+                </label>
+                <button
+                  type="button"
+                  disabled={isOwner}
+                  onClick={() => setFormData({ ...formData, esterilizacion: !formData.esterilizacion })}
+                  className={`relative inline-flex items-center h-10 w-16 rounded-full transition-colors duration-300 ${
+                    formData.esterilizacion ? 'bg-[#2ecc71]' : 'bg-gray-300'
+                  } ${isOwner ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                      formData.esterilizacion ? 'translate-x-8' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
 
             </div>
           </div>

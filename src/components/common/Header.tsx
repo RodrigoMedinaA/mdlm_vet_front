@@ -5,7 +5,7 @@ export default function Header() {
     <header className="w-full px-6 py-4 md:px-16 flex justify-between items-center bg-transparent relative z-20">
       {/* Logo de la Municipalidad */}
       <Image
-        src="/logo_munimolina.png"
+        src="/huellitas.png"
         alt="Municipalidad de La Molina"
         width={220}
         height={80}

@@ -39,7 +39,7 @@ export default function CajaPage() {
             href="/dashboard" 
             className="bg-white text-gray-600 border border-gray-200 px-8 py-3 rounded-xl font-bold shadow-sm hover:bg-gray-50 hover:text-[#015f33] hover:border-transparent hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5"
           >
-            Volver al Dashboard
+            Volver al Tablero
           </Link>
         </div>
       </div>

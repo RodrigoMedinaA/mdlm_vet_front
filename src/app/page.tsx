@@ -71,7 +71,7 @@ export default function Home() {
           {/* Logo de la Municipalidad */}
           <div className="flex items-center gap-4">
             <Image
-              src="/huellitas.png"
+              src="/logo_munimolina.png"
               alt="Municipalidad de La Molina"
               width={260}
               height={90}
@@ -83,14 +83,14 @@ export default function Home() {
           {/* Título */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
             <span className="text-white block">Veterinaria</span>
-            {/* <span className="text-[#fec107] block">Municipal</span> */}
+            <span className="text-[#fec107] block">Municipal</span>
           </h1>
 
           {/* Botones */}
           <div className="space-y-4 flex flex-col max-w-sm">
-            <Button 
-              variant="primary" 
-              fullWidth 
+            <Button
+              variant="primary"
+              fullWidth
               onClick={() => {
                 const ssoUrl = process.env.NEXT_PUBLIC_SSO_URL || 'http://sso.test/login';
                 const callback = encodeURIComponent(window.location.origin + '/auth/callback');
@@ -110,10 +110,10 @@ export default function Home() {
           </div>
 
           {/* Enlaces Legales */}
-          <div className="text-sm text-white/60 space-x-6">
+          {/* <div className="text-sm text-white/60 space-x-6">
             <a href="#" className="underline hover:text-white transition-colors duration-200">Políticas de Privacidad</a>
             <a href="#" className="underline hover:text-white transition-colors duration-200">Políticas de cookies</a>
-          </div>
+          </div> */}
         </div>
 
         {/* Lado Derecho: Dog SVG, CampaignList o ServiceCatalog */}

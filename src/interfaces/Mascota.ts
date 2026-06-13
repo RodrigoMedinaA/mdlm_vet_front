@@ -30,5 +30,8 @@ export interface Propietario {
   nro_doc: number;
   email: string;
   celular?: string;
+  nro_emergencia?: string | number;
   direccion: string;
+  vivienda_latitud?: number;
+  vivienda_longitud?: number;
 }

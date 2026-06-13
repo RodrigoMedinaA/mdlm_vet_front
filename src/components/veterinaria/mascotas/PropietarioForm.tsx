@@ -14,15 +14,16 @@ const MapSelector = dynamic(() => import('@/components/veterinaria/campanias/Map
 interface PropietarioFormProps {
   onCancel: () => void;
   editId?: string;
+  isProfileMode?: boolean;
 }
 
-export default function PropietarioForm({ onCancel, editId }: PropietarioFormProps) {
+export default function PropietarioForm({ onCancel, editId, isProfileMode = false }: PropietarioFormProps) {
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(!!editId);
   const [tipoDocumentos, setTipoDocumentos] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
-    tipo_documento_id: '',
+    tipo_doc: '',
     nro_doc: '',
     nombre: '',
     paterno: '',
@@ -48,7 +49,7 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
       if (editId) {
         const owner = await mascotaService.getPropietarioById(editId);
         setFormData({
-          tipo_documento_id: owner.tipo_doc || '',
+          tipo_doc: owner.tipo_doc || '',
           nro_doc: owner.nro_doc?.toString() || '',
           nombre: owner.nombre || '',
           paterno: owner.paterno || '',
@@ -105,13 +106,14 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
           <span className="text-gray-800 font-medium">{editId ? 'Editar' : 'Crear'}</span>
         </div>
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          {editId ? 'Editar Propietario' : 'Crear Propietario'}
+          {isProfileMode ? 'Editar Datos de Contacto' : editId ? 'Editar Propietario' : 'Crear Propietario'}
         </h2>
       </div>
 
       {/* Form Container */}
       <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
         
+        {!isProfileMode && (
         <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-[15px] font-bold text-gray-800">Información del Propietario</h3>
@@ -122,10 +124,10 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
               label="Tipo documento"
               required
               placeholder="Seleccione un tipo"
-              value={formData.tipo_documento_id}
-              onChange={(val) => setFormData({...formData, tipo_documento_id: val.toString()})}
+              value={formData.tipo_doc}
+              onChange={(val) => setFormData({...formData, tipo_doc: val.toString()})}
               options={tipoDocumentos.map(td => ({
-                id: td.id,
+                id: td.codigo,
                 label: td.nombre
               }))}
             />
@@ -181,6 +183,15 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
               />
             </div>
 
+          </div>
+        </div>
+        )}
+
+        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-[15px] font-bold text-gray-800">Datos de Contacto</h3>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-[13px] font-bold text-gray-700 mb-2">
                 Email <span className="text-pink-500">*</span>
@@ -193,14 +204,6 @@ export default function PropietarioForm({ onCancel, editId }: PropietarioFormPro
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm"
               />
             </div>
-          </div>
-        </div>
-
-        <div className="mb-6 border border-gray-100 rounded-2xl bg-white/70 shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-            <h3 className="text-[15px] font-bold text-gray-800">Datos adicionales de contacto</h3>
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-[13px] font-bold text-gray-700 mb-2">
                 Celular

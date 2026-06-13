@@ -22,10 +22,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = [
     { name: 'Tablero', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'gestor', 'veterinario'] },
-    { 
-      name: user?.roles?.includes('propietario') ? 'Gestión de mascotas' : 'Gestión de mascotas y propietarios', 
-      path: '/mascotas', 
-      icon: Dog 
+    {
+      name: user?.roles?.includes('propietario') ? 'Gestión de mascotas' : 'Gestión de mascotas y propietarios',
+      path: '/mascotas',
+      icon: Dog
     },
     { name: 'Gestión de albergue y adopciones', path: '/albergue', icon: Home, roles: ['admin', 'gestor', 'veterinario'] },
     { name: 'Gestión de personal', path: '/personal', icon: Users, roles: ['admin', 'gestor'] },
@@ -46,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className="w-[280px] bg-white/50 backdrop-blur-xl border-r border-white/50 flex flex-col my-4 ml-4 rounded-[32px] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] overflow-hidden relative z-10">
         <div className="p-8 flex items-center justify-center border-b border-white/40">
-          <Image src="/huellitas.png" alt="Logo" width={160} height={60} className="w-auto h-12 object-contain" />
+          <Image src="/logo_munimolina.png" alt="Logo" width={160} height={60} className="w-auto h-12 object-contain" />
         </div>
 
         <nav className="flex-1 px-5 py-8 space-y-2.5 overflow-y-auto custom-scrollbar">

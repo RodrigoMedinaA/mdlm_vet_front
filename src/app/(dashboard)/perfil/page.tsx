@@ -1,22 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { User, Mail, Phone, MapPin, Loader2, Save } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { mascotaService } from '@/utils/mascotaService';
 import { Propietario } from '@/interfaces/Mascota';
+import PropietarioForm from '@/components/veterinaria/mascotas/PropietarioForm';
 
 export default function PerfilPage() {
   const { user } = useAuthStore();
   const [propietario, setPropietario] = useState<Propietario | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [formData, setFormData] = useState({
-    direccion: '',
-    celular: '',
-    email: ''
-  });
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -27,36 +22,10 @@ export default function PerfilPage() {
       setLoading(true);
       const data: any = await mascotaService.getClientePerfil();
       setPropietario(data);
-      setFormData({
-        direccion: data.vivienda_direccion || '',
-        celular: data.celular || '',
-        email: data.email || ''
-      });
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSaveClick = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmSave = async () => {
-    if (!user?.propietario_id) return;
-
-    setSaving(true);
-    setShowConfirmModal(false);
-    try {
-      await mascotaService.updatePropietario(user.propietario_id, formData);
-      alert('Perfil actualizado con éxito');
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      alert('Error al actualizar el perfil');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -78,7 +47,7 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 relative">
       <div>
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Mi Perfil</h2>
         <p className="text-gray-500 mt-1 font-medium text-[15px]">Gestiona tu información personal de contacto</p>
@@ -103,95 +72,82 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Right Column: Edit Form */}
+        {/* Right Column: Read-Only Data */}
         <div className="lg:col-span-2">
-          <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60">
-            <form onSubmit={handleSaveClick} className="space-y-6">
-              <div className="space-y-4">
+          <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-8 shadow-sm border border-white/60 h-full">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-bold text-gray-800">Información de Contacto</h3>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold transition-colors text-sm"
+              >
+                Editar datos de contacto
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+                <div className="p-3 bg-[#2ecc71]/10 rounded-xl text-[#015f33] mt-1 shrink-0">
+                  <MapPin size={24} />
+                </div>
                 <div>
-                  <label className="block text-[13px] font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <MapPin size={16} className="text-[#015f33]" /> Dirección de Vivienda
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.direccion}
-                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm transition-all"
-                    placeholder="Tu dirección actual"
-                  />
+                  <p className="text-sm font-bold text-gray-500 mb-1">Dirección de Vivienda</p>
+                  <p className="text-gray-900 font-medium">{propietario.direccion || 'No registrada'}</p>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[13px] font-bold text-gray-700 mb-2 flex items-center gap-2">
-                      <Phone size={16} className="text-[#015f33]" /> Celular / Teléfono
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.celular}
-                      onChange={(e) => setFormData({ ...formData, celular: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm transition-all"
-                      placeholder="999 999 999"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+                  <div className="p-3 bg-[#2ecc71]/10 rounded-xl text-[#015f33] mt-1 shrink-0">
+                    <Phone size={24} />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-bold text-gray-700 mb-2 flex items-center gap-2">
-                      <Mail size={16} className="text-[#015f33]" /> Correo Electrónico
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ecc71]/50 text-sm transition-all"
-                      placeholder="ejemplo@correo.com"
-                    />
+                    <p className="text-sm font-bold text-gray-500 mb-1">Celular / Teléfono</p>
+                    <p className="text-gray-900 font-medium">{propietario.celular || 'No registrado'}</p>
+                  </div>
+                </div>
+
+                <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+                  <div className="p-3 bg-[#2ecc71]/10 rounded-xl text-[#015f33] mt-1 shrink-0">
+                    <Mail size={24} />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-sm font-bold text-gray-500 mb-1">Correo Electrónico</p>
+                    <p className="text-gray-900 font-medium truncate" title={propietario.email}>{propietario.email || 'No registrado'}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full md:w-auto bg-gradient-to-r from-[#015f33] to-[#2ecc71] hover:shadow-lg hover:shadow-[#2ecc71]/30 text-white px-8 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                  Guardar Cambios
-                </button>
+              <div className="grid grid-cols-1 gap-6">
+                <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+                  <div className="p-3 bg-red-500/10 rounded-xl text-red-500 mt-1 shrink-0">
+                    <Phone size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-500 mb-1">Nro Emergencia</p>
+                    <p className="text-gray-900 font-medium">{propietario.nro_emergencia || 'No registrado'}</p>
+                  </div>
+                </div>
               </div>
-            </form>
+
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
+      {/* Edit Form Modal */}
+      {isEditing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
-          <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-8 pt-8 pb-6 text-center">
-              <div className="w-16 h-16 bg-[#2ecc71]/10 rounded-full flex items-center justify-center mx-auto mb-6 text-[#2ecc71]">
-                <Save size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-gray-900 mb-3">¿Guardar cambios?</h3>
-              <p className="text-gray-500 leading-relaxed mb-8">
-                Se actualizará tu información personal de contacto en el sistema.
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleConfirmSave}
-                  className="w-full bg-gradient-to-r from-[#015f33] to-[#2ecc71] text-white py-4 rounded-2xl font-bold shadow-lg transition-all"
-                >
-                  Confirmar y Guardar
-                </button>
-                <button
-                  onClick={() => setShowConfirmModal(false)}
-                  className="w-full py-4 rounded-2xl font-bold text-gray-500 hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsEditing(false)} />
+          <div className="relative bg-transparent rounded-[32px] w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300">
+            <PropietarioForm 
+              editId={user?.propietario_id}
+              isProfileMode={true}
+              onCancel={() => {
+                setIsEditing(false);
+                fetchProfile();
+              }}
+            />
           </div>
         </div>
       )}
